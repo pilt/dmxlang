@@ -1,26 +1,27 @@
-do forever
-    -- show white light immediately
-    to 255 255 255
+use channel 1
+    do forever
+        -- show white light immediately
+        to 255 255 255
 
-    -- fade to all red in three seconds with as small step as possible
-    to 255 0 0 in 3s 
+        -- fade to all red in three seconds with as small step as possible
+        to 255 0 0 in 3s 
 
-    -- to blue and back to red in 1 sec
-    to 0 0 255 and back in 1s
+        -- to blue and back to red in 1 sec
+        to 0 0 255 and back in 1s
 
-    -- fade between red and yellow 10 times
-    do 10 times
-        to 255 255 0 and back in 500ms
+        -- fade between red and yellow 10 times
+        do 10 times
+            to 255 255 0 and back in 500ms
 
-    -- go from red to no light in three steps over five seconds
-    to 0 0 0 in 5s step 3
-    
-    -- go from red to green to blue to no light five times,
-    -- each cycle being two seconds long
-    do 5 times
-        to 255 0 0 in 500ms
-        to 0 255 0 in 500ms
-        to 0 0 255 in 500ms
-        to 0 0 0 in 500ms
-    
-    wait 1s
+        -- go from red to no light in three steps over five seconds
+        to 0 0 0 in 5s step 3
+        
+        -- go from red to green to blue to no light five times,
+        -- each cycle being two seconds long
+        do 5 times
+            to 255 0 0 in 500ms
+            to 0 255 0 in 500ms
+            to 0 0 255 in 500ms
+            to 0 0 0 in 500ms
+        
+        wait 1s
