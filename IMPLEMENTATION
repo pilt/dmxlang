@@ -1,0 +1,26 @@
+Implementation Notes
+====================
+
+'Do' Blocks
+-----------
+    do <times | keyword 'forever'>
+        ...
+
+A block can run zero to 255 times or forever. Block ending is determined by
+indendation. Each indentation step is four spaces long.
+
+We need a stack because 'do' blocks can be nested. One memory line should be
+reserved for stack offset and some memory area reserved for storing the stack.
+Each line in the stack memory area will hold a counter for a 'do' block.
+
+'To' Statements
+---------------
+    to <r g b> [and back] [in <time> [step <steps>]]
+
+See 'test.dmx' for examples. Color values are integers between zero and 255. One
+line per
+statement. 
+
+'Wait' Statements
+-----------------
+    wait <time>
