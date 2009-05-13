@@ -19,6 +19,9 @@ See 'test.dmx' for examples. Color values are integers between zero and 255.
 One line per statement. If no channel is given we will default to channel 1. Red
 value will be put at channel + 1, green at channel + 2 and blue at channel + 3.
 
+If we fade or step to a color we can macro expand the statement to a number of
+immediate 'to' statement inbetween 'wait' statements.
+
 'Wait' Statements
 -----------------
     wait <time>
