@@ -24,3 +24,9 @@ statement.
 'Wait' Statements
 -----------------
     wait <time>
+
+Comments
+--------
+    -- <text>
+
+Start a comment anywhere at a line with '--'. They and end at EOL.
