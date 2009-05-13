@@ -1,0 +1,237 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from __future__ import with_statement
+from cStringIO import StringIO
+import re
+
+def strip_comment(line):
+    pos = line.find('--')
+    if pos == -1:
+        return line
+    else:
+        return line[:pos]
+
+class ParseError(Exception):
+    pass
+
+class Statement(object):
+    indent = -1
+    pass
+
+class DoStatement(Statement):
+    def __init__(self, times=0, forever=False):
+        self.times = times
+        self.forever = forever
+
+    def __repr__(self):
+        if self.forever == True:
+            return "DoStatement(forever=True, indent=%i)" % self.indent
+        else:
+            return "DoStatement(times=%i, indent=%i)" \
+                % (self.times, self.indent)
+
+class ToStatement(Statement):
+    def __init__(self, red, green, blue, go_back=False, time=None, 
+            steps=False, channel=1):
+
+        if time is None:
+            time = Time()
+
+        self.red = red
+        self.green = green
+        self.blue = blue
+        self.go_back = go_back
+        self.time = time
+        self.steps = steps
+        self.channel = channel
+
+    def __repr__(self):
+        return "ToStatement(rgb(%i, %i, %i), go_back=%s, time=%i, steps=%s, channel=%s, indent=%i)" \
+            % (self.red, self.green, self.blue, self.go_back, self.time.time, 
+               self.steps, self.channel, self.indent)
+
+class WaitStatement(Statement):
+    def __init__(self, time=None):
+        if time is None:
+            time = Time()
+        self.time = time
+
+    def __repr__(self):
+        return "WaitStatement(time=%i, indent=%i)" \
+            % (self.time.time, self.indent)
+
+class TimeError(Exception):
+    pass
+
+class Time(object):
+    def __init__(self, time=0):
+        self.time = time
+
+    def from_string(self, string):
+        for (end, mult) in [('ms', 1), ('s', 1000)]:
+            if string.endswith(end):
+                time = string[:-len(end)]
+                if time.isdigit():
+                    self.time = int(time) * mult
+                    break
+                else:
+                    raise TimeError('bad time value (%s)' % time)
+        else:
+            raise TimeError("unknown time unit")
+        return self
+
+class IndentError(Exception):
+    pass
+
+def get_indent(line):
+    spaces = 0
+    for ch in line:
+        if ch == ' ':
+            spaces += 1
+        elif ch.isspace():
+            raise IndentError("indentation is done with spaces (got %r)" \
+                % ch)
+        else:
+            break
+    if spaces % 4 == 0:
+        return spaces // 4
+    else:
+        raise IndentError("indentation level could not be determined")
+
+def parse(lines):
+    def parse_do(args):
+        if len(args) == 1:
+            if args[0] == 'forever':
+                return DoStatement(forever=True)
+        elif len(args) == 2:
+            if args[0].isdigit() and args[1] == 'times':
+                return DoStatement(times=int(args[0]))
+        raise ParseError('bad times argument')
+
+    def parse_to(args):
+        def off(i):
+            return args[i]
+
+        for arg in args[:3]:
+            if arg.isdigit():
+                val = int(arg)
+                if (0 <= val and val <= 255):
+                    continue
+            raise ParseError("bad RGB value (%s)" % arg)
+        
+        r, g, b = [int(i) for i in args[:3]]
+        sm = ToStatement(r, g, b)
+
+        o = 3
+        if len(args) == o:
+            return sm
+        
+        if off(o) == 'and':
+            if off(o+1) == 'back':
+                sm.go_back = True
+                o += 2
+                if len(args) == o:
+                    return sm
+            else:
+                raise ParseError("expecting 'back'")
+
+        if off(o) == 'in':
+            try:
+                sm.time = sm.time.from_string(off(o+1))
+            except TimeError, e:
+                raise ParseError(e)
+            o += 2
+            if len(args) == o:
+                return sm
+            
+            if off(o) == 'step':
+                if off(o+1).isdigit():
+                    sm.steps = off(o+1)
+                    o += 2
+                    if len(args) == o:
+                        return sm
+                else:
+                    raise ParseError("bad step value (%r)" % off(o+1))
+
+        if off(o) == 'on':
+            if off(o+1) == 'channel':
+                chan = off(o+2) 
+                if chan.isdigit():
+                    sm.channel = int(chan)
+                    o += 3
+                    if len(args) == o:
+                        return sm
+                else:
+                    ParseError("bad channel value (%r)" % chan)
+            else:
+                raise ParseError("expecting 'channel'")
+        
+        return sm
+
+    def parse_wait(args):
+        time = Time()
+        try:
+            time = time.from_string(args[0])
+        except TimeError, e:
+            raise ParseError(e)
+        sm = WaitStatement(time)
+        return sm
+    
+    # Register our parsers.
+    parsers = {}
+    for (name, value) in locals().iteritems():
+        begner = 'parse_'
+        if name.startswith(begner):
+            parsers[name[len(begner):]] = value
+
+    parsed = []
+    for line in lines:
+        words = strip_comment(line).lower().split()
+        if len(words) == 0:
+            continue
+        
+        try:
+            indent = get_indent(line)
+        except IndentError, e:
+            raise ParseError("%s on line: %r" % (e, line))
+
+        statement = words[0]
+        args = words[1:]
+        if statement in parsers:
+            try:
+                sm = parsers[statement](args)
+                sm.indent = indent
+                parsed.append(sm)
+            except ParseError, e:
+                err = "%s on line: %r" % (e, line)
+                raise ParseError(err)
+            except Exception, e:
+                raise ParseError("Bad line: %r" % line)
+        else:
+            raise ParseError("Bad line: %r" % line)
+    return parsed
+
+def main(args):
+    if len(args) != 2:
+        return "Usage: %s <file>" % args[0]
+    
+    file = args[1]
+
+    try:
+        with open(file, 'r') as f:
+            code_lines = [line[:-1] for line in f.xreadlines()]
+            lines = parse(code_lines)
+            for line in lines:
+                print ' '*4*line.indent + repr(line)
+
+    except IOError, e:
+        return "Could not open %r for reading." % file
+    except ParseError, e:
+        return str(e).capitalize()
+    else:
+        return 0
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(main(sys.argv))
