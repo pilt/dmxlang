@@ -1,17 +1,5 @@
 Implementation Notes
 ====================
-
-'Use' Blocks
-------------
-    use channel <channel>
-        ...
-
-Use a certain channel. See 'test.dmx' for an example.
-
-We need a stack because 'use' blocks can be nested. One memory line should be
-reserved for stack offset and some memory area reserved for storing the stack.
-Each line in the stack memory area will hold a counter for a 'do' block.
-
 'Do' Blocks
 -----------
     do <times | keyword 'forever'>
@@ -25,11 +13,11 @@ Each line in the stack memory area will hold a counter for a 'do' block.
 
 'To' Statements
 ---------------
-    to <r g b> [and back] [in <time> [step <steps>]]
+    to <r g b> [and back] [in <time> [step <steps>]] [on channel <channel>]
 
 See 'test.dmx' for examples. Color values are integers between zero and 255.
-One line per statement. Red value will be put at current channel + 1, green at
-current channel + 2 and blue at current channel + 3.
+One line per statement. If no channel is given we will default to channel 1. Red
+value will be put at channel + 1, green at channel + 2 and blue at channel + 3.
 
 'Wait' Statements
 -----------------
