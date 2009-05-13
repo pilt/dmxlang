@@ -2,7 +2,7 @@ Implementation Notes
 ====================
 'Do' Blocks
 -----------
-    do <times | keyword 'forever'>
+    do <<times> times | forever>
         ...
 
 A block can run zero to 255 times or forever. 
