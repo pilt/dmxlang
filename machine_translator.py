@@ -76,6 +76,7 @@ class Translate(translator.Translate):
     def on_wait(self, wait):
         """Write the machine code for a 'wait' statement. See 'WaitStatement' in
         the statements module to see 'wait's properties."""
+        # FIXME: Timing! 
         start = label(self.lineno, 'wait_%i' % wait.time)
         self._a("lda %s" % absarg(wait.time))
         self._a("get d0")
