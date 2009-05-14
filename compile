@@ -5,6 +5,8 @@ from __future__ import with_statement
 from cStringIO import StringIO
 import re
 
+from sample_translator import Translate
+
 def strip_comment(line):
     pos = line.find('--')
     if pos == -1:
@@ -286,6 +288,21 @@ def parse(lines):
     else:
         return tree(parsed[0], parsed[1:])
 
+def traverse(tree, translator): 
+    def walk(node):
+        if type(node) == DoStatement:
+            translator.on_do(node)
+            for n in node.statements:
+                walk(n)
+        elif type(node) == ToStatement:
+            translator.on_to(node)
+        elif type(node) == WaitStatement:
+            translate.on_wait(node)
+
+    for node in tree:
+        walk(node)
+    translator.close()
+
 def main(args):
     if len(args) != 2:
         return "Usage: %s <file>" % args[0]
@@ -296,18 +313,8 @@ def main(args):
         with open(file, 'r') as f:
             code_lines = [line[:-1] for line in f.xreadlines()]
             tree = parse(code_lines)
-
-            def parse_tree(tree, i):
-                ret = " "*2*i + repr(tree) + "\n"
-                if type(tree) == DoStatement:
-                    for sm in tree.statements:
-                        ret += parse_tree(sm, i+1)
-                return ret
-            
-            import sys
-            for node in tree:
-                sys.stdout.write(parse_tree(node, 0))
-
+            translator = Translate()
+            traverse(tree, translator)
     except IOError, e:
         return "Could not open %r for reading." % file
     except ParseError, e:
