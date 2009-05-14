@@ -36,13 +36,13 @@ class DoStatement(Statement):
                 % (self.times, self.indent)
 
 class ToStatement(Statement):
-    def __init__(self, rgb, go_back=False, time=None, 
+    def __init__(self, color, go_back=False, time=None, 
             steps=False, channel=1):
 
         if time is None:
             time = 0
 
-        self.rgb = rgb
+        self.color = color
         self.go_back = go_back
         self.time = time
         self.steps = steps
@@ -50,7 +50,7 @@ class ToStatement(Statement):
 
     def __repr__(self):
         return "ToStatement(%r, go_back=%r, time=%i, steps=%s, channel=%s, indent=%i)" \
-            % (self.rgb, self.go_back, self.time, 
+            % (self.color, self.go_back, self.time, 
                self.steps, self.channel, self.indent)
 
 class WaitStatement(Statement):
@@ -136,8 +136,8 @@ def parse(lines):
                     continue
             raise ParseError("bad RGB value (%s)" % arg)
         
-        rgb = RGB(*[int(i) for i in args[:3]])
-        sm = ToStatement(rgb)
+        color = RGB(*[int(i) for i in args[:3]])
+        sm = ToStatement(color)
 
         o = 3
         if len(args) == o:
@@ -223,7 +223,7 @@ def parse(lines):
         go_back = RGB(0, 0, 0)
         if len(parsed) != 0 and type(parsed[-1]) == ToStatement:
             if parsed[-1].go_back == False:
-                go_back = parsed[-1].rgb
+                go_back = parsed[-1].color
             else:
                 go_back = parsed[-1].go_back
 
