@@ -34,4 +34,3 @@ class Translate(object):
 
     def end(self):
         raise NotImplementedError()
-
