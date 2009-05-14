@@ -4,7 +4,7 @@
 from __future__ import with_statement
 from cStringIO import StringIO
 import re
-from sample_translator import Translate
+from machine_translator import Translate
 from statements import *
 
 def strip_comment(line):
