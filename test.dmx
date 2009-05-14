@@ -27,3 +27,6 @@ do forever
         to 0 0 0 in 500ms
     
     wait 1s
+
+    do 15 times
+        to 255 0 255

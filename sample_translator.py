@@ -18,6 +18,8 @@ class Translate(translator.Translate):
     def on_do(self, do):
         self.time += 1
         self.add_evt(do)
+        for child in do.statements:
+            self.walk(child)
     
     def on_to(self, to):
         self.time += 1
