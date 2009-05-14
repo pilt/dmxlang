@@ -40,7 +40,7 @@ class ToStatement(Statement):
             steps=False, channel=1):
 
         if time is None:
-            time = Time()
+            time = 0
 
         self.rgb = rgb
         self.go_back = go_back
@@ -50,18 +50,18 @@ class ToStatement(Statement):
 
     def __repr__(self):
         return "ToStatement(%r, go_back=%r, time=%i, steps=%s, channel=%s, indent=%i)" \
-            % (self.rgb, self.go_back, self.time.time, 
+            % (self.rgb, self.go_back, self.time, 
                self.steps, self.channel, self.indent)
 
 class WaitStatement(Statement):
     def __init__(self, time=None):
         if time is None:
-            time = Time()
+            time = 0
         self.time = time
 
     def __repr__(self):
         return "WaitStatement(time=%i, indent=%i)" \
-            % (self.time.time, self.indent)
+            % (self.time, self.indent)
 
 class RGB(object):
     def __init__(self, r, g, b):
@@ -154,7 +154,8 @@ def parse(lines):
 
         if off(o) == 'in':
             try:
-                sm.time = sm.time.from_string(off(o+1))
+                temp_time = Time()
+                sm.time = temp_time.from_string(off(o+1)).time
             except TimeError, e:
                 raise ParseError(e)
             o += 2
@@ -191,9 +192,9 @@ def parse(lines):
     def parse_wait(args):
         if len(args) != 1:
             raise ParseError("bad number of arguments to 'wait'")
-        time = Time()
         try:
-            time = time.from_string(args[0])
+            time = Time()
+            time = time.from_string(args[0]).time
         except TimeError, e:
             raise ParseError(e)
         sm = WaitStatement(time)
