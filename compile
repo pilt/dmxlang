@@ -36,23 +36,21 @@ class DoStatement(Statement):
                 % (self.times, self.indent)
 
 class ToStatement(Statement):
-    def __init__(self, red, green, blue, go_back=False, time=None, 
+    def __init__(self, rgb, go_back=False, time=None, 
             steps=False, channel=1):
 
         if time is None:
             time = Time()
 
-        self.red = red
-        self.green = green
-        self.blue = blue
+        self.rgb = rgb
         self.go_back = go_back
         self.time = time
         self.steps = steps
         self.channel = channel
 
     def __repr__(self):
-        return "ToStatement(rgb(%i, %i, %i), go_back=%s, time=%i, steps=%s, channel=%s, indent=%i)" \
-            % (self.red, self.green, self.blue, self.go_back, self.time.time, 
+        return "ToStatement(%r, go_back=%r, time=%i, steps=%s, channel=%s, indent=%i)" \
+            % (self.rgb, self.go_back, self.time.time, 
                self.steps, self.channel, self.indent)
 
 class WaitStatement(Statement):
@@ -64,6 +62,15 @@ class WaitStatement(Statement):
     def __repr__(self):
         return "WaitStatement(time=%i, indent=%i)" \
             % (self.time.time, self.indent)
+
+class RGB(object):
+    def __init__(self, r, g, b):
+        self.r = r
+        self.g = g
+        self.b = b
+
+    def __repr__(self):
+        return "RGB(%i, %i, %i)" % (self.r, self.g, self.b)
 
 class TimeError(Exception):
     pass
@@ -116,12 +123,12 @@ def parse(lines):
         else:
             raise ParseError("too many arguments to 'do' statement")
 
-    def parse_to(args):
+    def parse_to(args, go_back_color):
         if len(args) > 12:
             raise ParseError("too many arguments to 'to'")
         def off(i):
             return args[i]
-
+        
         for arg in args[:3]:
             if arg.isdigit():
                 val = int(arg)
@@ -129,8 +136,8 @@ def parse(lines):
                     continue
             raise ParseError("bad RGB value (%s)" % arg)
         
-        r, g, b = [int(i) for i in args[:3]]
-        sm = ToStatement(r, g, b)
+        rgb = RGB(*[int(i) for i in args[:3]])
+        sm = ToStatement(rgb)
 
         o = 3
         if len(args) == o:
@@ -138,7 +145,7 @@ def parse(lines):
         
         if off(o) == 'and':
             if off(o+1) == 'back':
-                sm.go_back = True
+                sm.go_back = go_back_color
                 o += 2
                 if len(args) == o:
                     return sm
@@ -178,7 +185,7 @@ def parse(lines):
 
         if not off(o) in ['and', 'in', 'on']:
             raise ParseError("unexpected argument %r" % off(o))
-        
+
         return sm
 
     def parse_wait(args):
@@ -212,6 +219,13 @@ def parse(lines):
     lines.append('') # we want to check that the indentation on the real last 
                      # line is OK
     for (line, idx) in zip(lines, range(len(lines))):
+        go_back = RGB(0, 0, 0)
+        if len(parsed) != 0 and type(parsed[-1]) == ToStatement:
+            if parsed[-1].go_back == False:
+                go_back = parsed[-1].rgb
+            else:
+                go_back = parsed[-1].go_back
+
         words = strip_comment(line).lower().split()
         
         try:
@@ -228,7 +242,10 @@ def parse(lines):
         if statement in parsers:
             try:
                 check_indent(indent)
-                sm = parsers[statement](args)
+                if statement == 'to':
+                    sm = parsers[statement](args, go_back)
+                else:
+                    sm = parsers[statement](args)
                 sm.indent = indent
                 parsed.append(sm)
 
@@ -236,6 +253,7 @@ def parse(lines):
                 err = "%s on line %i: %r" % (e, idx+1, line)
                 raise ParseError(err)
             except Exception, e:
+                raise
                 raise ParseError("Bad line: %r" % line)
         else:
             raise ParseError("Bad line: %r" % line)
