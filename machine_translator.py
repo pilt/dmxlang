@@ -21,18 +21,22 @@ def mem_counter(offset=0):
     return mem(offset)
 
 class Translate(translator.Translate):
-    def __init__(self, file):
-        translator.Translate.__init__(self, file)
+    """This class translates a parse tree to machine code."""
 
     def start(self):
         self.lines = []
         self.lineno = 0
 
     def _a(self, line):
+        """Add a machine code line and increment the internal line number
+        counter. You should use this method and not operate on 'self.lines'
+        directly. """
         self.lineno += 1
         self.lines.append(line)
 
     def on_do(self, do):
+        """Write the machine code for a 'do' block. See 'DoStatement' in the
+        statements module to see 'do's properties. """
         start_line = self.lineno
         if do.forever:
             start_label = label(start_line, 'do_forever')
@@ -61,13 +65,17 @@ class Translate(translator.Translate):
             self._a("%s : nop" % end_label)
     
     def on_to(self, to):
-        # TODO: Implement other things.
+        """Write the machine code for a 'to' statement. See 'ToStatement' in the
+        statements module to see 'to's properties."""
+        # TODO: Implement other things. See IMPLEMENTATION.
         for (c, off) in zip([0, to.color.r, to.color.g, to.color.b, 0], range(5)):
             self._a("lda %s" % absarg(c))
             self._a("get d0")
             self._a("store d0 %s" % channel(to.channel + off))
 
     def on_wait(self, wait):
+        """Write the machine code for a 'wait' statement. See 'WaitStatement' in
+        the statements module to see 'wait's properties."""
         start = label(self.lineno, 'wait_%i' % wait.time)
         self._a("lda %s" % absarg(wait.time))
         self._a("get d0")
@@ -98,4 +106,6 @@ class Translate(translator.Translate):
         self._a("%s : nop" % outer_end)
 
     def end(self):
+        """Called when we are finished parsing. Write output to standard
+        output."""
         sys.stdout.write("\n".join(self.lines) + '\n')
