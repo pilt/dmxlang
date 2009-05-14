@@ -298,10 +298,11 @@ def traverse(tree, translator):
             translator.on_to(node)
         elif type(node) == WaitStatement:
             translate.on_wait(node)
-
+    
+    translator.start()
     for node in tree:
         walk(node)
-    translator.close()
+    translator.end()
 
 def main(args):
     if len(args) != 2:

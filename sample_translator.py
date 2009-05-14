@@ -3,7 +3,8 @@
 import sys
 
 class Translate(object):
-    def __init__(self):
+    def start(self):
+        sys.stdout.write("start\n\n")
         self.time = 0
         self.lines = []
 
@@ -22,7 +23,7 @@ class Translate(object):
         self.time += 1
         self.add_evt(wait)
 
-    def close(self):
+    def end(self):
         sys.stdout.write("time: %i\n\n%s\n\nfinished.\n" \
                 % (self.time, "\n".join(self.lines)))
 
