@@ -314,7 +314,7 @@ def main(args):
         with open(file, 'r') as f:
             code_lines = [line[:-1] for line in f.xreadlines()]
             tree = parse(code_lines)
-            translator = Translate()
+            translator = Translate(file)
             traverse(tree, translator)
     except IOError, e:
         return "Could not open %r for reading." % file
