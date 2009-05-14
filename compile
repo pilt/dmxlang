@@ -19,10 +19,14 @@ class Statement(object):
     indent = -1
     pass
 
+class Statements(list):
+    pass
+
 class DoStatement(Statement):
     def __init__(self, times=0, forever=False):
         self.times = times
         self.forever = forever
+        self.statements = Statements()
 
     def __repr__(self):
         if self.forever == True:
@@ -101,15 +105,20 @@ def get_indent(line):
 
 def parse(lines):
     def parse_do(args):
-        if len(args) == 1:
+        if len(args) == 0:
+            raise ParseError("missing argument to 'do' statement")
+        elif len(args) == 1:
             if args[0] == 'forever':
                 return DoStatement(forever=True)
         elif len(args) == 2:
             if args[0].isdigit() and args[1] == 'times':
                 return DoStatement(times=int(args[0]))
-        raise ParseError('bad times argument')
+        else:
+            raise ParseError("too many arguments to 'do' statement")
 
     def parse_to(args):
+        if len(args) > 12:
+            raise ParseError("too many arguments to 'to'")
         def off(i):
             return args[i]
 
@@ -152,7 +161,7 @@ def parse(lines):
                     if len(args) == o:
                         return sm
                 else:
-                    raise ParseError("bad step value (%r)" % off(o+1))
+                    raise ParseError("bad step value %r" % off(o+1))
 
         if off(o) == 'on':
             if off(o+1) == 'channel':
@@ -163,13 +172,18 @@ def parse(lines):
                     if len(args) == o:
                         return sm
                 else:
-                    ParseError("bad channel value (%r)" % chan)
+                    ParseError("bad channel value %r" % chan)
             else:
                 raise ParseError("expecting 'channel'")
+
+        if not off(o) in ['and', 'in', 'on']:
+            raise ParseError("unexpected argument %r" % off(o))
         
         return sm
 
     def parse_wait(args):
+        if len(args) != 1:
+            raise ParseError("bad number of arguments to 'wait'")
         time = Time()
         try:
             time = time.from_string(args[0])
@@ -186,31 +200,73 @@ def parse(lines):
             parsers[name[len(begner):]] = value
 
     parsed = []
-    for line in lines:
+    def check_indent(this_indent):
+        if len(parsed) != 0:
+            last = parsed[-1]
+            if type(last) == DoStatement:
+                if this_indent <= last.indent:
+                   raise ParseError("empty 'do' block")
+                elif this_indent > last.indent + 1:
+                   raise ParseError("too large indendation increase")
+    
+    lines.append('') # we want to check that the indentation on the real last 
+                     # line is OK
+    for (line, idx) in zip(lines, range(len(lines))):
         words = strip_comment(line).lower().split()
-        if len(words) == 0:
-            continue
         
         try:
             indent = get_indent(line)
         except IndentError, e:
-            raise ParseError("%s on line: %r" % (e, line))
+            raise ParseError("%s on line %i: %r" % (e, idx+1, line))
+
+        if len(words) == 0:
+            check_indent(indent)
+            continue
 
         statement = words[0]
         args = words[1:]
         if statement in parsers:
             try:
+                check_indent(indent)
                 sm = parsers[statement](args)
                 sm.indent = indent
                 parsed.append(sm)
+
             except ParseError, e:
-                err = "%s on line: %r" % (e, line)
+                err = "%s on line %i: %r" % (e, idx+1, line)
                 raise ParseError(err)
             except Exception, e:
                 raise ParseError("Bad line: %r" % line)
         else:
             raise ParseError("Bad line: %r" % line)
-    return parsed
+
+    from pprint import pprint
+    def tree(first, rest):
+        if type(first) == DoStatement:
+            children = Statements()
+            stop = rest
+            for r in rest:
+                stop = stop[1:]
+                if r.indent > first.indent:
+                    children.append(r)
+                else:
+                    break
+
+            first.statements = tree(children[0], children[1:])
+            if len(stop) == 0:
+                return [first]
+            else:
+                return [first] + tree(stop[0], stop[1:])
+        else:
+            if len(rest) == 0:
+                return [first]
+            else:
+                return [first] + tree(rest[0], rest[1:])
+    
+    if len(parsed) == 0:
+        return []
+    else:
+        return tree(parsed[0], parsed[1:])
 
 def main(args):
     if len(args) != 2:
@@ -221,9 +277,18 @@ def main(args):
     try:
         with open(file, 'r') as f:
             code_lines = [line[:-1] for line in f.xreadlines()]
-            lines = parse(code_lines)
-            for line in lines:
-                print ' '*4*line.indent + repr(line)
+            tree = parse(code_lines)
+
+            def parse_tree(tree, i):
+                ret = " "*2*i + repr(tree) + "\n"
+                if type(tree) == DoStatement:
+                    for sm in tree.statements:
+                        ret += parse_tree(sm, i+1)
+                return ret
+            
+            import sys
+            for node in tree:
+                sys.stdout.write(parse_tree(node, 0))
 
     except IOError, e:
         return "Could not open %r for reading." % file
