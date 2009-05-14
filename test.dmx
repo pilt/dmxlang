@@ -1,6 +1,9 @@
+wait 1s
 do forever
     -- show white light immediately on channel 1 lamp
     to 255 255 255
+    
+    wait 500ms
 
     -- put blue on channel 10 lamp
     to 0 0 255 on channel 10
