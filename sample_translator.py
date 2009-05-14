@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 
+import translator
 import sys
 
-class Translate(object):
+class Translate(translator.Translate):
+    def __init__(self, file):
+        translator.Translate.__init__(self, file)
+
     def start(self):
-        sys.stdout.write("start\n\n")
+        sys.stdout.write("start, input file: %s\n\n" % self.input_file)
         self.time = 0
         self.lines = []
 
