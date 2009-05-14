@@ -253,7 +253,6 @@ def parse(lines):
                 err = "%s on line %i: %r" % (e, idx+1, line)
                 raise ParseError(err)
             except Exception, e:
-                raise
                 raise ParseError("Bad line: %r" % line)
         else:
             raise ParseError("Bad line: %r" % line)
