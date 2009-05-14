@@ -134,7 +134,7 @@ def parse(lines):
                 val = int(arg)
                 if (0 <= val and val <= 255):
                     continue
-            raise ParseError("bad RGB value (%s)" % arg)
+            raise ParseError("bad RGB value %r" % arg)
         
         color = RGB(*[int(i) for i in args[:3]])
         sm = ToStatement(color)
