@@ -217,8 +217,8 @@ def parse(lines):
             children = Statements()
             stop = rest
             for r in rest:
-                stop = stop[1:]
                 if r.indent > first.indent:
+                    stop = stop[1:]
                     children.append(r)
                 else:
                     break
