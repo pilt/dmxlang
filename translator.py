@@ -3,9 +3,6 @@
 from statements import *
 
 class Translate(object):
-    def __init__(self, input_file):
-        self.input_file = input_file
-
     def walk(self, node):
         if type(node) == DoStatement:
             self.on_do(node)
