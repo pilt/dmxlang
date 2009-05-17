@@ -3,8 +3,8 @@
 # TODO: Make it work.
 
 infile=$1
-machine_file=${infile}.m
-out_file=${machine_file}.bin
+machine_file=${infile%dmx}m
+out_file=${machine_file%m}bin
 curl=curl
 which $curl &> /dev/null
 if [ $? != 0 ]; then
