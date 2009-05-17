@@ -258,7 +258,13 @@ def main(args):
             code_lines = [line[:-1] for line in f.xreadlines()]
             tree = parse(code_lines)
             translator.traverse(tree)
-        out_file = file + '.m'
+
+        dotpos = file.rfind('.dmx')
+        if dotpos == -1:
+            out_file = file + '.m'
+        else:
+            out_file = file[:dotpos] + '.m'
+
         with open(out_file, 'w') as f:
             f.write("%s" % translator)
 
