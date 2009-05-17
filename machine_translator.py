@@ -12,11 +12,13 @@ def channel(offset=0):
     return hex(3072 + offset)[2:]
 
 def mem(adr):
+    """Format a memory address."""
     return hex(adr)[2:].rjust(3, '0')
 
 def label(adr, tag="label"):
-    label = tag + mem(adr)
-    return label.upper()
+    "Generate a label for an address. 'tag' will be added a the beginning."
+    label = tag + '__' + mem(adr)
+    return label
 
 def mem_counter(offset=0):
     return mem(offset)
