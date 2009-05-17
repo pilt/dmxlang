@@ -17,9 +17,14 @@ if [ $? != 0 ]; then
     echo "Translation to machine code failed."
     exit 1
 fi
+rm $out_file &> /dev/null
 $curl -F 'action=assemblera' -F 'out=binary' -F "code=<$machine_file" \
-    -o $out_file ass.sjlander.com &> /dev/null
+    -F 'err=1' -o $out_file ass.sjlander.com &> /dev/null
 if [ $? != 0 ]; then
     echo "Could not fetch binary file."
+    exit 1
+fi
+if ! [ -e $out_file ]; then
+    echo "No output file written."
     exit 1
 fi
