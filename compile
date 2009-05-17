@@ -253,11 +253,16 @@ def main(args):
     file = args[1]
 
     try:
+        translator = Translate()
         with open(file, 'r') as f:
             code_lines = [line[:-1] for line in f.xreadlines()]
             tree = parse(code_lines)
-            translator = Translate(file)
             translator.traverse(tree)
+        out_file = file + '.m'
+        with open(out_file, 'w') as f:
+            f.write("%s" % translator)
+            print "Output written to %r." % out_file
+
     except IOError, e:
         return "Could not open %r for reading." % file
     except ParseError, e:
