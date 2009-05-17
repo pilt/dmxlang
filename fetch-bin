@@ -16,4 +16,5 @@ if [ $? != 0 ]; then
     echo "Translation to machine code failed."
     exit 1
 fi
-$curl -F 'action=assemblera' -F 'out=binary' -F "code=@$machine_file" ass.sjlander.com
+$curl -F 'action=assemblera' -F 'out=text' -F "code=<$machine_file" ass.sjlander.com
+echo
