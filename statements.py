@@ -4,8 +4,10 @@ class Statement(object):
     indent = -1
     pass
 
+
 class Statements(list):
     pass
+
 
 class DoStatement(Statement):
     def __init__(self, times=0, forever=False):
@@ -19,6 +21,7 @@ class DoStatement(Statement):
         else:
             return "DoStatement(times=%i, indent=%i)" \
                 % (self.times, self.indent)
+
 
 class ToStatement(Statement):
     def __init__(self, color, go_back=False, time=None, 
@@ -37,6 +40,7 @@ class ToStatement(Statement):
         return "ToStatement(%r, go_back=%r, time=%i, steps=%s, channel=%s, indent=%i)" \
             % (self.color, self.go_back, self.time, 
                self.steps, self.channel, self.indent)
+
 
 class WaitStatement(Statement):
     def __init__(self, time=None):
