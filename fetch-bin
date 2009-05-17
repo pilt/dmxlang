@@ -1,6 +1,7 @@
 #! /usr/bin/env bash
 
 infile=$1
+machine_file=${infile}.m
 curl=curl
 which $curl &> /dev/null
 if [ $? != 0 ]; then
@@ -13,4 +14,4 @@ if [ $? != 0 ]; then
     echo "Translation to machine code failed."
     exit 1
 fi
-$curl -F 'action=assemblera' -F 'out=binary' -F "code=@$infile" ass.sjlander.com
+$curl -F 'action=assemblera' -F 'out=binary' -F "code=@$machine_file" ass.sjlander.com
