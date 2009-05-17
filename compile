@@ -49,14 +49,14 @@ class Time(object):
 class IndentError(Exception):
     pass
 
-def get_indent(line):
+def indent_level(line):
     """Get the level of indentation on 'line.' Indentation must be done with 
     spaces and the number of spaces must be a multiple of four.
 
     Example
-        >>> get_indent('to 255 0 0')
+        >>> indent_level('to 255 0 0')
         0
-        >>> get_indent('    to 255 0 0') # 4 spaces
+        >>> indent_level('    to 255 0 0') # 4 spaces
         1
     """
     spaces = 0
@@ -193,7 +193,7 @@ def parse(lines):
         words = strip_comment(line).lower().split()
         
         try:
-            indent = get_indent(line)
+            indent = indent_level(line)
         except IndentError, e:
             raise ParseError("%s on line %i: %r" % (e, idx+1, line))
 
