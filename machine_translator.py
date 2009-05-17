@@ -8,6 +8,7 @@ def absarg(decimal):
     return "#" + val.rjust(2, '0')
 
 def channel(offset=0):
+    """Channel 0 is at memory address 0xC00 (3072)."""
     return hex(3072 + offset)[2:]
 
 def mem(adr):
