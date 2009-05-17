@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import translator
-import sys
-import os.path
 
 def absarg(decimal):
     val = hex(decimal)[2:]
