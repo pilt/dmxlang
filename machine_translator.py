@@ -1,7 +1,9 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import translator
 import sys
+import os.path
 
 def absarg(decimal):
     val = hex(decimal)[2:]
@@ -112,7 +114,9 @@ class Translate(translator.Translate):
         self.insert("jmp %s" % start)
         self.insert("%s : nop" % outer_end)
 
+    def __str__(self):
+        return "\n".join(self.lines) + '\n'
+
     def end(self):
-        """Called when we are finished parsing. Write output to standard
-        output."""
-        sys.stdout.write("\n".join(self.lines) + '\n')
+        """Called when we are finished parsing."""
+        pass
