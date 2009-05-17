@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+# TODO: Make it work.
+
 infile=$1
 machine_file=${infile}.m
 curl=curl
