@@ -4,6 +4,7 @@
 
 infile=$1
 machine_file=${infile}.m
+out_file=${machine_file}.bin
 curl=curl
 which $curl &> /dev/null
 if [ $? != 0 ]; then
@@ -16,5 +17,9 @@ if [ $? != 0 ]; then
     echo "Translation to machine code failed."
     exit 1
 fi
-$curl -F 'action=assemblera' -F 'out=text' -F "code=<$machine_file" ass.sjlander.com
-echo
+$curl -F 'action=assemblera' -F 'out=binary' -F "code=<$machine_file" \
+    -o $out_file ass.sjlander.com &> /dev/null
+if [ $? != 0 ]; then
+    echo "Could not fetch binary file."
+    exit 1
+fi
