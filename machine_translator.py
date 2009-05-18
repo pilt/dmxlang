@@ -137,13 +137,13 @@ class Translate(translator.Translate):
         if update.update_by == 0:
             return
         self.insert('load d0 %s' % mem(update.mem_addr))
-        self.insert('get d0')
+        self.insert('put d0')
         if update.update_by < 0:
             update_line = 'sub %s' % absarg(update.update_by)
         else:
             update_line = 'add %s' % absarg(update.update_by)
         self.insert(update_line)
-        self.insert('put d0')
+        self.insert('get d0')
         self.insert('store d0 %s' % mem(update.mem_addr))
         self.insert('store d0 %s' % channel(update.channel))
 
