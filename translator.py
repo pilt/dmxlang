@@ -10,6 +10,8 @@ class Translate(object):
             self.on_to(node)
         elif type(node) == WaitStatement:
             self.on_wait(node)
+        elif type(node) == UpdateStatement:
+            self.on_update(node)
         
     def traverse(self, tree): 
         self.start()
@@ -27,6 +29,9 @@ class Translate(object):
         raise NotImplementedError()
 
     def on_wait(self, wait):
+        raise NotImplementedError()
+
+    def on_update(self, update):
         raise NotImplementedError()
 
     def end(self):

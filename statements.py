@@ -37,6 +37,14 @@ class ToStatement(Statement):
             % (self.color, self.time, self.channel, self.from_color, self.indent)
 
 
+class UpdateStatement(Statement):
+    """Used in fades."""
+    def __init__(self, channel, mem_addr, update_by):
+        self.channel = channel
+        self.mem_addr = mem_addr
+        self.update_by = update_by
+
+
 class WaitStatement(Statement):
     def __init__(self, time=None):
         if time is None:

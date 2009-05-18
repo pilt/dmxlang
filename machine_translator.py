@@ -4,7 +4,7 @@
 import translator
 
 def absarg(decimal):
-    val = hex(decimal)[2:]
+    val = hex(abs(decimal))[2:]
     return "#" + val.rjust(2, '0')
 
 def channel(offset=0):
@@ -90,14 +90,55 @@ class Translate(translator.Translate):
             # FIXME: The final color is likely to differ from the wanted value
             # because of the rounding.
 
-            # See 'IMPLEMENTATIN' for a description of the algorithm.
-            # TODO: red, green, blue...
-            fade_steps = 255
-            iter_wait = 1
+            # See 'IMPLEMENTATION' for a description of the algorithm.
+            
+            # Memory address to store current color values at. Red is at
+            # 'curcol_mem_start' + 0, green at +1, blue at +2.
+            curcol_mem_start = self.lineno
+
+            # Save the initial color values to memory.
+            for (c, off) in zip(
+                    [0,
+                    to.from_color.r, 
+                    to.from_color.g, 
+                    to.from_color.b,
+                    0], range(5)):
+                self.insert("lda %s" % absarg(c))
+                self.insert("get d0")
+                if off not in [0, 4]:
+                    self.insert("store d0 %s" % mem(curcol_mem_start + off))
+                self.insert("store d0 %s" % channel(to.channel + off))
+            
+            # Insert the loop code.
+            fade_steps = 17
+            iter_wait = 15
             differ = translator.RGBDiffer(to.color, to.from_color)
             step_diff = differ.step_diff(iter_wait).round()
-            body = Statements()
+            body = translator.Statements()
+            for (color_offset, iter_diff) in [
+                    (1, step_diff.r),
+                    (2, step_diff.g),
+                    (3, step_diff.b)]:
+                col_channel = to.channel + color_offset
+                mem_addr = curcol_mem_start + color_offset 
+                update = translator.UpdateStatement(col_channel, mem_addr, iter_diff)
+                body.append(update)
+
             self.gen_loop_times(fade_steps, body)
+
+    def on_update(self, update):
+        if update.update_by == 0:
+            return
+        self.insert('load d0 %s' % mem(update.mem_addr))
+        self.insert('get d0')
+        if update.update_by < 0:
+            update_line = 'sub %s' % absarg(update.update_by)
+        else:
+            update_line = 'add %s' % absarg(update.update_by)
+        self.insert(update_line)
+        self.insert('put d0')
+        self.insert('store d0 %s' % mem(update.mem_addr))
+        self.insert('store d0 %s' % channel(update.channel))
 
     def on_wait(self, wait):
         """Write the machine code for a 'wait' statement. See 'WaitStatement' in
