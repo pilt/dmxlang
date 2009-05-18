@@ -91,6 +91,7 @@ class Translate(translator.Translate):
             # because of the rounding.
 
             # See 'IMPLEMENTATION' for a description of the algorithm.
+            self.insert('-- start color transition (to %r from %r)' % (to.color, to.from_color))
             
             # Memory address to store current color values at. Red is at
             # 'curcol_mem_start' + 0, green at +1, blue at +2.
@@ -113,7 +114,7 @@ class Translate(translator.Translate):
             fade_steps = 17
             iter_wait = 15
             differ = translator.RGBDiffer(to.from_color, to.color)
-            step_diff = differ.step_diff(iter_wait).round()
+            step_diff = differ.step_diff(fade_steps).round()
             print "FROM : %r" % to.from_color
             print "TO : %r" % to.color
             print "STEP DIFF : %r" % step_diff
@@ -124,12 +125,13 @@ class Translate(translator.Translate):
                     (2, step_diff.g),
                     (3, step_diff.b)]:
                 col_channel = to.channel + color_offset
-                mem_addr = curcol_mem_start + color_offset 
+                mem_addr = curcol_mem_start + color_offset
                 update = translator.UpdateStatement(col_channel, mem_addr, iter_diff)
                 body.append(update)
             wait = translator.WaitStatement(iter_wait)
             body.append(wait)
             self.gen_loop_times(fade_steps, body)
+            self.insert('-- end color transition')
 
     def on_update(self, update):
         if update.update_by == 0:
@@ -150,6 +152,7 @@ class Translate(translator.Translate):
         the statements module to see 'wait's properties."""
         # FIXME: Timing! 
         # FIXME: Use 'gen_loop_times'.
+        self.insert('-- start wait')
         start = label(self.lineno, 'wait_%i' % wait.time)
         self.insert("lda %s" % absarg(wait.time))
         self.insert("get d0")
@@ -178,6 +181,8 @@ class Translate(translator.Translate):
         self.insert("jmpz %s" % outer_end)
         self.insert("jmp %s" % start)
         self.insert("%s : nop" % outer_end)
+
+        self.insert('-- end wait')
 
     def __str__(self):
         return "\n".join(self.lines) + '\n'
