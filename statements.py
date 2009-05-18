@@ -62,7 +62,7 @@ class RGB(object):
         return "RGB(%s, %s, %s)" % (self.r, self.g, self.b)
 
 
-class RGBDiff(object):
+class RGBDiffer(object):
     def __init__(self, rgb1, rgb2):
         self.rgb1 = rgb1
         self.rgb2 = rgb2
@@ -81,5 +81,5 @@ class RGBDiff(object):
         return RGB(*diffs)
 
     def __repr__(self):
-        return "RGBDiff(rgb1=%r, rgb2=%r, diff=%r)" \
+        return "RGBDiffer(rgb1=%r, rgb2=%r, diff=%r)" \
                 % (self.rgb1, self.rgb2, self.diff())
