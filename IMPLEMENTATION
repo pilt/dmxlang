@@ -58,13 +58,11 @@ Fades can be done with the following algorithm
             The difference in each iteration should be: -5.1, 2, 5.1.
             (ITER. DIFF = TOTAL DIFF / (FADE TIME / WAIT TIME)
 
-    4. Round step values to integers and save to memory
+    4. Round step values to integers 
     (4b. Save final color to memory)
     5. Save current colors to memory
     6. Loop (FADE TIME / WAIT TIME iterations), in each iteration do
-
-        6.1. Fetch iteration step value
-        6.2. Increment or decrement current color value
+        6.1. Increment or decrement current color value by step value
     (7. If 4b. was done, update current color value to these values)
 
     If we have to be precise, perform steps 4b. and 7.. If not performed, the
