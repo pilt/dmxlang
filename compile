@@ -99,7 +99,7 @@ def parse(lines):
             return (False, str(e))
         return (True, '')
 
-    def parse_to(args, go_back_color):
+    def parse_to(args):
         if len(args) > 12:
             raise ParseError("too many arguments to 'to'")
         def off(i):
@@ -194,13 +194,6 @@ def parse(lines):
     lines.append('') # we want to check that the indentation on the real last 
                      # line is OK
     for (line, idx) in zip(lines, range(len(lines))):
-        go_back = RGB(0, 0, 0)
-        if len(parsed) != 0 and type(parsed[-1]) == ToStatement:
-            if parsed[-1].go_back == False:
-                go_back = parsed[-1].color
-            else:
-                go_back = parsed[-1].go_back
-
         words = strip_comment(line).lower().split()
         
         try:
@@ -217,10 +210,7 @@ def parse(lines):
         if statement in parsers:
             try:
                 check_indent(indent)
-                if statement == 'to':
-                    sm = parsers[statement](args, go_back)
-                else:
-                    sm = parsers[statement](args)
+                sm = parsers[statement](args)
                 sm.indent = indent
                 parsed.append(sm)
 

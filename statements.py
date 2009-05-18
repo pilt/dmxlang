@@ -24,23 +24,21 @@ class DoStatement(Statement):
 
 
 class ToStatement(Statement):
-    def __init__(self, color, go_back=False, time=None, 
+    def __init__(self, color, time=None, 
             steps=False, channel=1, from_color=None):
 
         if time is None:
             time = 0
 
         self.color = color
-        self.go_back = go_back
         self.time = time
         self.steps = steps
         self.channel = channel
         self.from_color = from_color
 
     def __repr__(self):
-        return "ToStatement(%r, go_back=%r, time=%i, steps=%s, channel=%s, indent=%i)" \
-            % (self.color, self.go_back, self.time, 
-               self.steps, self.channel, self.indent)
+        return "ToStatement(%r, time=%i, steps=%s, channel=%s, indent=%i)" \
+            % (self.color, self.time, self.steps, self.channel, self.indent)
 
 
 class WaitStatement(Statement):
