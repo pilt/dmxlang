@@ -37,8 +37,8 @@ class ToStatement(Statement):
         self.from_color = from_color
 
     def __repr__(self):
-        return "ToStatement(%r, time=%i, steps=%s, channel=%s, indent=%i)" \
-            % (self.color, self.time, self.steps, self.channel, self.indent)
+        return "ToStatement(%r, time=%i, steps=%s, channel=%s, from_color=%r, indent=%i)" \
+            % (self.color, self.time, self.steps, self.channel, self.from_color, self.indent)
 
 
 class WaitStatement(Statement):
