@@ -54,19 +54,32 @@ class RGB(object):
         self.g = g
         self.b = b
 
+    def round(self):
+        rgb = [int(x//1) for x in [self.r, self.g, self.b]]
+        return RGB(*rgb)
+
     def __repr__(self):
-        return "RGB(%i, %i, %i)" % (self.r, self.g, self.b)
+        return "RGB(%s, %s, %s)" % (self.r, self.g, self.b)
+
 
 class RGBDiff(object):
-    def __init__(self):
-        self.r = self.g = self.b = 0
+    def __init__(self, rgb1, rgb2):
+        self.rgb1 = rgb1
+        self.rgb2 = rgb2
 
-    def diff(self, col1, col2):
+    def diff(self):
+        diff = []
         for c in ['r', 'g', 'b']:
-            c1 = getattr(col1, c)
-            c2 = getattr(col2, c)
-            setattr(self, c, c1 - c2)
-        return self
+            c1 = getattr(self.rgb1, c)
+            c2 = getattr(self.rgb2, c)
+            diff.append(c2-c1)
+        return RGB(*diff)
+
+    def step_diff(self, step_count):
+        diff = self.diff()
+        diffs = [x/float(step_count) for x in [diff.r, diff.g, diff.b]]
+        return RGB(*diffs)
 
     def __repr__(self):
-        return "RGBDiff(%i, %i, %i)" % (self.r, self.g, self.b)
+        return "RGBDiff(rgb1=%r, rgb2=%r, diff=%r)" \
+                % (self.rgb1, self.rgb2, self.diff())
