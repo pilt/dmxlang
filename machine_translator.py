@@ -123,7 +123,8 @@ class Translate(translator.Translate):
                 mem_addr = curcol_mem_start + color_offset 
                 update = translator.UpdateStatement(col_channel, mem_addr, iter_diff)
                 body.append(update)
-
+            wait = translator.WaitStatement(iter_wait)
+            body.append(wait)
             self.gen_loop_times(fade_steps, body)
 
     def on_update(self, update):
@@ -144,6 +145,7 @@ class Translate(translator.Translate):
         """Write the machine code for a 'wait' statement. See 'WaitStatement' in
         the statements module to see 'wait's properties."""
         # FIXME: Timing! 
+        # FIXME: Use 'gen_loop_times'.
         start = label(self.lineno, 'wait_%i' % wait.time)
         self.insert("lda %s" % absarg(wait.time))
         self.insert("get d0")
