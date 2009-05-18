@@ -40,44 +40,64 @@ class Translate(translator.Translate):
             self.lineno += 1
             self.lines.append(line)
 
+    def gen_loop_times(self, times, body_statements):
+        start_line = self.lineno
+        start_label = label(start_line, 'do_%i_times' % times)
+        self.insert("lda %s" % absarg(times))
+        self.insert("%s : nop" % start_label)
+        self.insert("get d0")
+        self.insert("store d0 %s" % mem_counter(start_line))
+        for child in body_statements:
+            self.walk(child)
+        self.insert("load d0 %s" % mem_counter(start_line))
+        self.insert("put d0")
+        self.insert("sub %s" % absarg(1))
+        self.insert("get d0")
+        self.insert("store d0 %s" % mem_counter(start_line))
+        end_label = label(self.lineno + 2, 'end_do')
+        self.insert("jmpz %s" % end_label)
+        self.insert("jmp %s" % start_label)
+        self.insert("%s : nop" % end_label)
+
+    def gen_loop_forever(self, body_statements):
+        start_line = self.lineno
+        start_label = label(start_line, 'do_forever')
+        self.insert("%s : nop" % start_label)
+        for child in body_statements:
+            self.walk(child)
+        self.insert("jmp %s" % start_label)
+
     def on_do(self, do):
         """Write the machine code for a 'do' block. See 'DoStatement' in the
         statements module to see 'do's properties. """
-        start_line = self.lineno
         if do.forever:
-            start_label = label(start_line, 'do_forever')
-            self.insert("%s : nop" % start_label)
+            self.gen_loop_forever(do.statements)
         else:
-            start_label = label(start_line, 'do_%i_times' % do.times)
-            self.insert("lda %s" % absarg(do.times))
-            self.insert("%s : nop" % start_label)
-            self.insert("get d0")
-            self.insert("store d0 %s" % mem_counter(start_line))
-
-        for child in do.statements:
-            self.walk(child)
-
-        if do.forever:
-            self.insert("jmp %s" % start_label)
-        else:
-            self.insert("load d0 %s" % mem_counter(start_line))
-            self.insert("put d0")
-            self.insert("sub %s" % absarg(1))
-            self.insert("get d0")
-            self.insert("store d0 %s" % mem_counter(start_line))
-            end_label = label(self.lineno + 2, 'end_do')
-            self.insert("jmpz %s" % end_label)
-            self.insert("jmp %s" % start_label)
-            self.insert("%s : nop" % end_label)
+            self.gen_loop_times(do.times, do.statements)
     
     def on_to(self, to):
         """Write the machine code for a 'to' statement. See 'ToStatement' in the
         statements module to see 'to's properties."""
         # TODO: Implement other things. See IMPLEMENTATION.
-        for (c, off) in zip([0, to.color.r, to.color.g, to.color.b, 0], range(5)):
-            self.insert("lda %s" % absarg(c))
-            self.insert("get d0")
-            self.insert("store d0 %s" % channel(to.channel + off))
+        if to.time == 0:
+            for (c, off) in zip([0, to.color.r, to.color.g, to.color.b, 0], range(5)):
+                self.insert("lda %s" % absarg(c))
+                self.insert("get d0")
+                self.insert("store d0 %s" % channel(to.channel + off))
+        else: # we have a fade
+            # FIXME: Every fade will be 255ms long whatever argument was passed.
+            # fade_time = to.time
+            # FIXME: The final color is likely to differ from the wanted value
+            # because of the rounding.
+
+            # See 'IMPLEMENTATIN' for a description of the algorithm.
+            # TODO: red, green, blue...
+            fade_steps = 255
+            iter_wait = 1
+            differ = translator.RGBDiffer(to.color, to.from_color)
+            step_diff = differ.step_diff(iter_wait).round()
+            body = Statements()
+            self.gen_loop_times(fade_steps, body)
 
     def on_wait(self, wait):
         """Write the machine code for a 'wait' statement. See 'WaitStatement' in
