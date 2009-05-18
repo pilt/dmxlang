@@ -112,8 +112,12 @@ class Translate(translator.Translate):
             # Insert the loop code.
             fade_steps = 17
             iter_wait = 15
-            differ = translator.RGBDiffer(to.color, to.from_color)
+            differ = translator.RGBDiffer(to.from_color, to.color)
             step_diff = differ.step_diff(iter_wait).round()
+            print "FROM : %r" % to.from_color
+            print "TO : %r" % to.color
+            print "STEP DIFF : %r" % step_diff
+            print ""
             body = translator.Statements()
             for (color_offset, iter_diff) in [
                     (1, step_diff.r),
