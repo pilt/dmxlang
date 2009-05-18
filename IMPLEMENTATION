@@ -31,3 +31,42 @@ Comments
     -- <text>
 
 Start a comment anywhere at a line with '--'. They and end at EOL.
+
+Fades
+-----
+Fades can be done with the following algorithm
+
+    1. Read the initial color values on the channels the fade will be on
+    2. Determine the difference to the end color value for each color
+        
+        Example
+
+            * Color before: 255 100 0
+            * Color after fade: 0 200 255
+            
+            * Difference on RED channel: -255
+                          GREEN channel: 100
+                           BLUE channel: 255
+
+    3. Determine the step value for each iteration for each color
+
+        Example
+
+            * Differences: -255, 100, 255
+            * Fade should be 500ms long, each iteration has a 10ms wait
+            
+            The difference in each iteration should be: -5.1, 2, 5.1.
+            (ITER. DIFF = TOTAL DIFF / (FADE TIME / WAIT TIME)
+
+    4. Round step values to integers and save to memory
+    (4b. Save final color to memory)
+    5. Save current colors to memory
+    6. Loop (FADE TIME / WAIT TIME iterations), in each iteration do
+
+        6.1. Fetch iteration step value
+        6.2. Increment or decrement current color value
+    (7. If 4b. was done, update current color value to these values)
+
+    If we have to be precise, perform steps 4b. and 7.. If not performed, the
+    final color value is likely do be different than the expected because of the
+    rounding.
