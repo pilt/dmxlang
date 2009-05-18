@@ -80,7 +80,7 @@ class RGBDiffer(object):
         for c in ['r', 'g', 'b']:
             c1 = getattr(self.rgb1, c)
             c2 = getattr(self.rgb2, c)
-            diff.append(c2-c1)
+            diff.append(c1-c2)
         return RGB(*diff)
 
     def step_diff(self, step_count):
