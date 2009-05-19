@@ -120,10 +120,9 @@ class MasterTranslate(translator.MasterTranslate):
         proc_returns = [label('process_%i_return_to_master' % p.pid) for p in self.procs]
         proc_data = zip(self.procs, proc_returns)
         # Insert code for the master event loop.
-        insert(self, '-- master loop')
         for (proc, ret) in proc_data:
-            body.append('  jmp %s' % proc.start_label)
-            body.append('  %s : nop' % ret)
+            body.append('jmp %s' % proc.start_label)
+            body.append('%s : nop' % ret)
         add_loop_forever(self, body)
         insert(self, ['', '']) 
 
@@ -148,48 +147,74 @@ class ProcessTranslate(translator.ProcessTranslate):
         self.mem_wait2 = umem() # XXX: do we need both?
         self.mem_ar = umem()
         self.mem_d0 = umem()
+        self.mem_break = umem()
+
+        self.return_labels = []
         
         # Initialize labels.
         self.start_label = label('process_%i_start' % self.pid)
         self.end_label = label('process_%i_end' % self.pid)
+        self.enter_label = label('process_%i_enter' % self.pid)
 
     def insert_save(self):
         """Insert code to save D0 and AR values to memory."""
-        insert(self, [
-            '-- begin save',
-            '  store d0 %s' % mem(self.mem_d0),
-            '  get d0',
-            '  store d0 %s' % mem(self.mem_ar),
-            '-- end save'])
+        self.lines += [
+            'store d0 %s' % mem(self.mem_d0),
+            'get d0',
+            'store d0 %s' % mem(self.mem_ar)]
 
     def insert_restore(self):
         """Insert code to restore values of D0 and AR from memory."""
-        insert(self, [
-            '-- begin restore',
-            '  load d0 %s' % mem(self.mem_ar),
-            '  put d0',
-            '  load d0 %s' % mem(self.mem_d0),
-            '-- end restore'])
+        self.lines += [
+            'load d0 %s' % mem(self.mem_ar),
+            'put d0',
+            'load d0 %s' % mem(self.mem_d0)]
+
+    def insert(self, line_or_lines):
+        """Add machine code lines and increment the internal line number
+        counter. You should use this method and not operate on 'self.lines'
+        directly. """
+        if type(line_or_lines) == str:
+            line_or_lines = [line_or_lines]
+        for line in line_or_lines:
+            self.lineno += 1
+            slot_space = 10
+            if self.lineno % slot_space == 0 or line.lstrip().startswith('jmp'):
+                count = self.lineno // slot_space
+                return_label = label('process_%i_return_%i' % (self.pid, count))
+                self.return_labels.append((count, return_label))
+                self.insert_save()
+                self.lines.append("put d1")
+                self.lines.append("add #01")
+                self.lines.append("%s : get d1" % return_label)
+                self.lines.append("store d1 %s" % mem(self.mem_break))
+                self.insert_restore()
+            self.lines.append(line)
 
     def start(self):
         self.lineno = 0
         self.lines = []
         
-        # Insert label to start of process.
-        insert(self, '%s : nop' % self.start_label)
+        # Insert label to start of process. 
+        extra = self.lines.append
+        extra('%s : nop' % self.start_label)
+        extra('lda #00')
+        extra('get d1')
+        extra('store d1 %s' % mem(self.mem_break))
 
     def end(self):
         """Called when we are finished parsing."""
-        insert(self, '%s : nop' % self.end_label)
 
-        # Indent code.
-        indented = []
-        indented.append(self.lines[0])
-        for loc in self.lines[1:-1]:
-            indented.append("  %s" % loc)
-        indented.append(self.lines[-1])
-
-        self.lines = indented
+        extra = self.lines.append
+        extra('jmp %s' % self.end_label)
+        extra('%s : nop' % self.enter_label)
+        extra('load d0 %s' % mem(self.mem_break))
+        extra('put d0')
+        for (count, ret_lbl) in self.return_labels:
+            extra('jmpz %s' % ret_lbl)
+            extra('sub #01')
+        extra('jmp %s' % self.start_label)
+        extra('%s : nop' % self.end_label)
 
     def on_do(self, do):
         """Write the machine code for a 'do' block. See 'DoStatement' in the
@@ -205,9 +230,9 @@ class ProcessTranslate(translator.ProcessTranslate):
         # TODO: Implement other things. See IMPLEMENTATION.
         if to.time == 0:
             for (c, off) in zip([0, to.color.r, to.color.g, to.color.b, 0], range(5)):
-                insert(self, "lda %s" % absarg(c))
-                insert(self, "get d0")
-                insert(self, "store d0 %s" % channel(to.channel + off))
+                self.insert("lda %s" % absarg(c))
+                self.insert("get d0")
+                self.insert("store d0 %s" % channel(to.channel + off))
         else: # we have a fade
             # FIXME: Every fade will be 255ms long whatever argument was passed.
             # fade_time = to.time
@@ -215,7 +240,6 @@ class ProcessTranslate(translator.ProcessTranslate):
             # because of the rounding.
 
             # See 'IMPLEMENTATION' for a description of the algorithm.
-            insert(self, '-- start color transition (to %r from %r)' % (to.color, to.from_color))
             
             # Generate memory addresses to use for the current color.
             curcol_addrs = [umem() for _ in range(3)]
@@ -227,11 +251,11 @@ class ProcessTranslate(translator.ProcessTranslate):
                     to.from_color.g, 
                     to.from_color.b,
                     0], range(5)):
-                insert(self, "lda %s" % absarg(c))
-                insert(self, "get d0")
+                self.insert("lda %s" % absarg(c))
+                self.insert("get d0")
                 if off not in [0, 4]:
-                    insert(self, "store d0 %s" % mem(curcol_addrs[off-1]))
-                insert(self, "store d0 %s" % channel(to.channel + off))
+                    self.insert("store d0 %s" % mem(curcol_addrs[off-1]))
+                self.insert("store d0 %s" % channel(to.channel + off))
             
             # Insert the loop code.
             fade_steps = 17
@@ -254,57 +278,54 @@ class ProcessTranslate(translator.ProcessTranslate):
             wait = translator.WaitStatement(iter_wait)
             body.append(wait)
             add_loop_times(self, fade_steps, body)
-            insert(self, '-- end color transition')
 
     def on_update(self, update):
         if update.update_by == 0:
             return
-        insert(self, 'load d0 %s' % mem(update.mem_addr))
-        insert(self, 'put d0')
+        self.insert('load d0 %s' % mem(update.mem_addr))
+        self.insert('put d0')
         if update.update_by < 0:
             update_line = 'sub %s' % absarg(update.update_by)
         else:
             update_line = 'add %s' % absarg(update.update_by)
-        insert(self, update_line)
-        insert(self, 'get d0')
-        insert(self, 'store d0 %s' % mem(update.mem_addr))
-        insert(self, 'store d0 %s' % channel(update.channel))
+        self.insert(update_line)
+        self.insert('get d0')
+        self.insert('store d0 %s' % mem(update.mem_addr))
+        self.insert('store d0 %s' % channel(update.channel))
 
     def on_wait(self, wait):
         """Write the machine code for a 'wait' statement. See 'WaitStatement' in
         the statements module to see 'wait's properties."""
         # FIXME: Use 'add_loop_times'.
-        insert(self, '-- start wait')
         start = label('wait_%i' % wait.time)
-        insert(self, "lda %s" % absarg(wait.time))
-        insert(self, "get d0")
+        self.insert("lda %s" % absarg(wait.time))
+        self.insert("get d0")
         counter = mem_counter(self.lineno)
-        insert(self, "store d0 %s" % counter)
-        insert(self, "%s : nop" % start)
+        self.insert("store d0 %s" % counter)
+        self.insert("%s : nop" % start)
 
         # Inner loop.
         inner = label('inner_wait')
-        insert(self, "lda %s" % absarg(200))
-        insert(self, "%s : nop" % inner)
-        [insert(self, "nop") for _ in range(14)]
-        insert(self, "sub %s" % absarg(1))
+        self.insert("lda %s" % absarg(200))
+        self.insert("%s : nop" % inner)
+        [self.insert("nop") for _ in range(14)]
+        self.insert("sub %s" % absarg(1))
         inner_end = label('inner_end')
-        insert(self, "jmpz %s" % inner_end)
-        insert(self, "jmp %s" % inner)
-        insert(self, "%s : nop" % inner_end)
+        self.insert("jmpz %s" % inner_end)
+        self.insert("jmp %s" % inner)
+        self.insert("%s : nop" % inner_end)
 
         # Outer check.
-        insert(self, "load d0 %s" % counter)
-        insert(self, "put d0")
-        insert(self, "sub %s" % absarg(1))
-        insert(self, "get d0")
-        insert(self, "store d0 %s" % counter)
+        self.insert("load d0 %s" % counter)
+        self.insert("put d0")
+        self.insert("sub %s" % absarg(1))
+        self.insert("get d0")
+        self.insert("store d0 %s" % counter)
         outer_end = label('wait_end')
-        insert(self, "jmpz %s" % outer_end)
-        insert(self, "jmp %s" % start)
-        insert(self, "%s : nop" % outer_end)
+        self.insert("jmpz %s" % outer_end)
+        self.insert("jmp %s" % start)
+        self.insert("%s : nop" % outer_end)
 
-        insert(self, '-- end wait')
 
     def __str__(self):
         return "\n".join(self.lines) + '\n'
