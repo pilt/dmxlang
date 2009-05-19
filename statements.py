@@ -9,6 +9,14 @@ class Statements(list):
     pass
 
 
+class ProcessStatement(Statement):
+    def __init__(self):
+        self.statements = Statements()
+
+    def __repr__(self):
+        return "ProcessStatement(indent=%i)" % self.indent
+
+
 class DoStatement(Statement):
     def __init__(self, times=0, forever=False):
         self.times = times

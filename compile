@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import with_statement
-from machine_translator import Translate
+from machine_translator import MasterTranslate, TranslationError
 from statements import *
 
 def strip_comment(line):
@@ -77,6 +77,12 @@ def parse(lines):
                 return DoStatement(times=int(args[0]))
         else:
             raise ParseError("too many arguments to 'do' statement")
+
+    def parse_process(args):
+        if len(args) != 0:
+            raise ParseError("too many arguments to 'process' statement")
+        else:
+            return ProcessStatement()
 
     def check_color(args):
         try:
@@ -176,9 +182,9 @@ def parse(lines):
     def check_indent(this_indent):
         if len(parsed) != 0:
             last = parsed[-1]
-            if type(last) == DoStatement:
+            if type(last) in [DoStatement, ProcessStatement]:
                 if this_indent <= last.indent:
-                   raise ParseError("empty 'do' block")
+                   raise ParseError("empty block")
                 elif this_indent > last.indent + 1:
                    raise ParseError("too large indendation increase")
     
@@ -214,7 +220,7 @@ def parse(lines):
             raise ParseError("Bad line: %r" % line)
 
     def tree(first, rest):
-        if type(first) == DoStatement:
+        if type(first) in [DoStatement, ProcessStatement]:
             children = Statements()
             stop = rest
             for r in rest:
@@ -247,11 +253,14 @@ def main(args):
     file = args[1]
 
     try:
-        translator = Translate()
+        translator = MasterTranslate()
         with open(file, 'r') as f:
             code_lines = [line[:-1] for line in f.xreadlines()]
             tree = parse(code_lines)
-            translator.traverse(tree)
+            try:
+                translator.traverse(tree)
+            except Exception, e:
+                return "Failed generating code: %s." % e
 
         dotpos = file.rfind('.dmx')
         if dotpos == -1:
