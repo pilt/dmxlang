@@ -186,8 +186,11 @@ class ProcessTranslate(translator.ProcessTranslate):
                 self.insert_save()
                 self.lines.append("put d1")
                 self.lines.append("add #01")
-                self.lines.append("%s : get d1" % return_label)
+                self.lines.append("get d1")
                 self.lines.append("store d1 %s" % mem(self.mem_break))
+                self.lines.append("jmp %s" % self.end_label)
+                self.lines.append("%s : get d1" % return_label)
+                self.lines.append("store d1 %s" % mem(self.mem_break)) # needed?
                 self.insert_restore()
             self.lines.append(line)
 
@@ -206,7 +209,13 @@ class ProcessTranslate(translator.ProcessTranslate):
         """Called when we are finished parsing."""
 
         extra = self.lines.append
+        
+        # Make sure we enter at the beginning next time.
+        extra('lda #00')
+        extra('get d1')
+        extra('store d1 %s' % mem(self.mem_break))
         extra('jmp %s' % self.end_label)
+
         extra('%s : nop' % self.enter_label)
         extra('load d0 %s' % mem(self.mem_break))
         extra('put d0')
