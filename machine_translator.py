@@ -143,13 +143,33 @@ class ProcessTranslate(translator.ProcessTranslate):
     def __init__(self, pid):
         self.pid = pid
 
-        # Initialize memory addresses.
+        # Initialize memory area.
         self.mem_wait1 = umem()
         self.mem_wait2 = umem() # XXX: do we need both?
+        self.mem_ar = umem()
+        self.mem_d0 = umem()
         
         # Initialize labels.
         self.start_label = label('process_%i_start' % self.pid)
         self.end_label = label('process_%i_end' % self.pid)
+
+    def insert_save(self):
+        """Insert code to save D0 and AR values to memory."""
+        insert(self, [
+            '-- begin save',
+            '  store d0 %s' % mem(self.mem_d0),
+            '  get d0',
+            '  store d0 %s' % mem(self.mem_ar),
+            '-- end save'])
+
+    def insert_restore(self):
+        """Insert code to restore values of D0 and AR from memory."""
+        insert(self, [
+            '-- begin restore',
+            '  load d0 %s' % mem(self.mem_ar),
+            '  put d0',
+            '  load d0 %s' % mem(self.mem_d0),
+            '-- end restore'])
 
     def start(self):
         self.lineno = 0
