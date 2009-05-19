@@ -162,9 +162,9 @@ class Translate(translator.Translate):
 
         # Inner loop.
         inner = label(self.lineno, 'inner_wait')
-        self.insert("lda %s" % absarg(255))
+        self.insert("lda %s" % absarg(200))
         self.insert("%s : nop" % inner)
-        [self.insert("nop") for _ in range(7)]
+        [self.insert("nop") for _ in range(14)]
         self.insert("sub %s" % absarg(1))
         inner_end = label(self.lineno + 2, 'inner_end')
         self.insert("jmpz %s" % inner_end)
