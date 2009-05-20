@@ -1,0 +1,8 @@
+process
+    wait 10ms
+
+process
+    wait 20ms
+    to 255 255 255
+    wait 20ms
+    to 255 128 255

@@ -117,7 +117,7 @@ class MasterTranslate(translator.MasterTranslate):
 
     def end(self):
         body = translator.Statements()
-        proc_returns = [label('process_%i_return_to_master' % p.pid) for p in self.procs]
+        proc_returns = [p.master_return_label for p in self.procs]
         proc_data = zip(self.procs, proc_returns)
         # Insert code for the master event loop.
         for (proc, ret) in proc_data:
@@ -143,32 +143,84 @@ class ProcessTranslate(translator.ProcessTranslate):
         self.pid = pid
 
         # Initialize memory area.
-        self.mem_wait1 = umem()
-        self.mem_wait2 = umem() # XXX: do we need both?
+        self.mem_waiting = umem()
+        self.mem_timeslots = umem()
+        self.mem_returnpoint = umem()
         self.mem_ar = umem()
         self.mem_d0 = umem()
+        self.mem_d1 = umem()
         self.mem_break = umem()
-
-        self.return_labels = []
         
         # Initialize labels.
+        self.master_return_label = label('master_process_%i_return' % self.pid)
+        self.return_do_label = label('process_%i_return_do' % self.pid)
+        self.wait_do_label = label('process_%i_wait_do' % self.pid)
         self.start_label = label('process_%i_start' % self.pid)
         self.end_label = label('process_%i_end' % self.pid)
         self.enter_label = label('process_%i_enter' % self.pid)
-
+        
+        self.return_labels = [self.start_label]
+        
+    def insert_return(self, wait = 0):
+        returnpoint = len(self.return_labels)
+        return_label = label('process_%i_return_%i' % (self.pid, returnpoint))
+        self.return_labels.append(return_label)
+        self.insert_save()
+        self.lines += [
+            '    lda %s' % absarg(returnpoint),
+            '    get d1',
+            '    jmp %s' % self.return_do_label,
+            '    %s:' %return_label,
+            ]
+        self.insert_restore()
+            
+    def insert_return_do(self):
+        self.lines += [
+            ' %s: ' % self.return_do_label,
+            ' store d1 %s' %  mem(self.mem_returnpoint),
+            #' load d0 %s' % mem(self.mem_timeslots),
+            #' put d0',
+            #' sub #1',
+            ' jmp %s' % self.master_return_label,
+            #' get d0',
+            #' store d0 %s' %  mem(self.mem_timeslots),
+            #' jmp %s' % self.enter_label,
+            ]
+    def insert_wait_do(self):
+        self.lines += [
+            '    %s:' % self.wait_do_label,
+            '    store d1 %s' %  mem(self.mem_returnpoint),
+            '    jmp %s' % self.master_return_label,
+            ]
+        
+    def insert_enter(self):
+        pre_lines = []
+        pre_lines += [
+            '%s:' % self.enter_label,
+            'load d1 %s' %  mem(self.mem_returnpoint),
+            'put d1',
+            ]
+        for return_label in self.return_labels:
+            pre_lines += [
+                'jmpz %s' % return_label,
+                'sub %s' % absarg(1),
+            ]
+        pre_lines.extend(self.lines)
+        self.lines = pre_lines
+        
     def insert_save(self):
         """Insert code to save D0 and AR values to memory."""
         self.lines += [
-            'store d0 %s' % mem(self.mem_d0),
-            'get d0',
-            'store d0 %s' % mem(self.mem_ar)]
+            '  store d0 %s' % mem(self.mem_d0),
+            '  get d0',
+            '  store d0 %s' % mem(self.mem_ar)]
 
     def insert_restore(self):
         """Insert code to restore values of D0 and AR from memory."""
         self.lines += [
-            'load d0 %s' % mem(self.mem_ar),
-            'put d0',
-            'load d0 %s' % mem(self.mem_d0)]
+            '  load d0 %s' % mem(self.mem_ar),
+            '  put d0',
+            '  load d0 %s' % mem(self.mem_d0)]
 
     def insert(self, line_or_lines):
         """Add machine code lines and increment the internal line number
@@ -180,18 +232,7 @@ class ProcessTranslate(translator.ProcessTranslate):
             self.lineno += 1
             slot_space = 10
             if self.lineno % slot_space == 0 or line.lstrip().startswith('jmp'):
-                count = self.lineno // slot_space
-                return_label = label('process_%i_return_%i' % (self.pid, count))
-                self.return_labels.append((count, return_label))
-                self.insert_save()
-                self.lines.append("put d1")
-                self.lines.append("add #01")
-                self.lines.append("get d1")
-                self.lines.append("store d1 %s" % mem(self.mem_break))
-                self.lines.append("jmp %s" % self.end_label)
-                self.lines.append("%s : get d1" % return_label)
-                self.lines.append("store d1 %s" % mem(self.mem_break)) # needed?
-                self.insert_restore()
+                self.insert_return()
             self.lines.append(line)
 
     def start(self):
@@ -214,16 +255,11 @@ class ProcessTranslate(translator.ProcessTranslate):
         extra('lda #00')
         extra('get d1')
         extra('store d1 %s' % mem(self.mem_break))
-        extra('jmp %s' % self.end_label)
-
-        extra('%s : nop' % self.enter_label)
-        extra('load d0 %s' % mem(self.mem_break))
-        extra('put d0')
-        for (count, ret_lbl) in self.return_labels:
-            extra('jmpz %s' % ret_lbl)
-            extra('sub #01')
-        extra('jmp %s' % self.start_label)
+        extra('jmp %s' % self.enter_label)
+        self.insert_enter()
         extra('%s : nop' % self.end_label)
+        self.insert_return_do()
+        self.insert_wait_do()
 
     def on_do(self, do):
         """Write the machine code for a 'do' block. See 'DoStatement' in the
@@ -302,40 +338,44 @@ class ProcessTranslate(translator.ProcessTranslate):
         self.insert('store d0 %s' % mem(update.mem_addr))
         self.insert('store d0 %s' % channel(update.channel))
 
+    def insert_pass(self):
+        """ Insert a forced return """
+        returnpoint = len(self.return_labels)
+        return_label = label('process_%i_wait_%i' % (self.pid, returnpoint))
+        self.return_labels.append(return_label)
+        self.lines += [
+            'lda %s' % absarg(returnpoint),
+            'get d1',
+            'jmp %s' % self.wait_do_label,
+            '%s:' % return_label,
+            ]
     def on_wait(self, wait):
         """Write the machine code for a 'wait' statement. See 'WaitStatement' in
         the statements module to see 'wait's properties."""
-        # FIXME: Use 'add_loop_times'.
-        start = label('wait_%i' % wait.time)
-        self.insert("lda %s" % absarg(wait.time))
-        self.insert("get d0")
-        counter = mem_counter(self.lineno)
-        self.insert("store d0 %s" % counter)
-        self.insert("%s : nop" % start)
-
-        # Inner loop.
-        inner = label('inner_wait')
-        self.insert("lda %s" % absarg(200))
-        self.insert("%s : nop" % inner)
-        [self.insert("nop") for _ in range(14)]
-        self.insert("sub %s" % absarg(1))
-        inner_end = label('inner_end')
-        self.insert("jmpz %s" % inner_end)
-        self.insert("jmp %s" % inner)
-        self.insert("%s : nop" % inner_end)
-
-        # Outer check.
-        self.insert("load d0 %s" % counter)
-        self.insert("put d0")
-        self.insert("sub %s" % absarg(1))
-        self.insert("get d0")
-        self.insert("store d0 %s" % counter)
-        outer_end = label('wait_end')
-        self.insert("jmpz %s" % outer_end)
-        self.insert("jmp %s" % start)
-        self.insert("%s : nop" % outer_end)
-
-
+        if wait.time < 255:
+            long_wait = wait.time/200
+            inner = label('inner_wait')
+            done = label('wait_done')
+            self.lines += [
+                '',
+                "lda %s" % absarg(long_wait),
+                "%s : nop" % inner,
+                'get d0',
+                'store d0 %s' % mem(self.mem_ar),
+                ]
+            self.insert_pass()
+            self.lines += [
+                'load d0 %s' % mem(self.mem_ar),
+                'put d0',
+                'sub %s' % absarg(1),
+                'jmpz %s' % done,
+                'jmp %s' % inner,
+                '%s : nop' % done,
+                ''
+            ]
+        else:
+            pass
+        
     def __str__(self):
         return "\n".join(self.lines) + '\n'
 
