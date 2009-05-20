@@ -271,10 +271,6 @@ class ProcessTranslate(translator.ProcessTranslate):
             iter_wait = 15
             differ = translator.RGBDiffer(to.from_color, to.color)
             step_diff = differ.step_diff(fade_steps).round()
-            print "FROM : %r" % to.from_color
-            print "TO : %r" % to.color
-            print "STEP DIFF : %r" % step_diff
-            print ""
             body = translator.Statements()
             for (color_offset, iter_diff) in [
                     (0, step_diff.r),
