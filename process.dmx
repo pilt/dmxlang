@@ -1,2 +1,15 @@
 process
-    to 0 0 0
+    to 0 0 255 on channel 1
+    do 10 times
+        wait 200ms
+    to 0 255 0 on channel 1
+    do 10 times
+        wait 200ms
+
+process
+    to 255 0 0 on channel 6
+    do 10 times
+        wait 200ms
+    to 0 255 255 on channel 6
+    do 10 times
+        wait 200ms
