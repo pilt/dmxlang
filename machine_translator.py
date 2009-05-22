@@ -51,7 +51,7 @@ def add_loop_forever(transl, body_statements):
     can be either a subclass of 'translator.Statement' or a string of machine code.
     """
     start_label = label('do_forever')
-    insert(transl, "%s : nop" % start_label)
+    insert(transl, "%s:" % start_label)
     for child in body_statements:
         try:
             transl.walk(child)
@@ -66,7 +66,7 @@ def add_loop_times(transl, times, body_statements):
     start_line = transl.lineno
     start_label = label('do_%i_times' % times)
     insert(transl, "lda %s" % absarg(times))
-    insert(transl, "%s : nop" % start_label)
+    insert(transl, "%s:" % start_label)
     insert(transl, "get d0")
     insert(transl, "store d0 %s" % mem_counter(start_line))
     for child in body_statements:
@@ -79,7 +79,7 @@ def add_loop_times(transl, times, body_statements):
     end_label = label('end_do')
     insert(transl, "jmpz %s" % end_label)
     insert(transl, "jmp %s" % start_label)
-    insert(transl, "%s : nop" % end_label)
+    insert(transl, "%s:" % end_label)
 
 def insert(transl, line_or_lines):
     """Add machine code lines and increment the internal line number
@@ -121,8 +121,10 @@ class MasterTranslate(translator.MasterTranslate):
         proc_data = zip(self.procs, proc_returns)
         # Insert code for the master event loop.
         for (proc, ret) in proc_data:
-            body.append('jmp %s' % proc.start_label)
-            body.append('%s : nop' % ret)
+            body.append('nop')
+            body.append('jmp %s' % proc.enter_label)
+            body.append('%s:' % ret)
+            body.append('nop')
         add_loop_forever(self, body)
         insert(self, ['', '']) 
 
@@ -134,7 +136,8 @@ class MasterTranslate(translator.MasterTranslate):
                 '', 
                 ''])
 
-        print "\n".join(self.lines)
+    def __str__(self):
+        return "\n".join(self.lines) + '\n'
 
 class ProcessTranslate(translator.ProcessTranslate):
     """This class translates a parse tree to machine code."""
@@ -149,7 +152,6 @@ class ProcessTranslate(translator.ProcessTranslate):
         self.mem_ar = umem()
         self.mem_d0 = umem()
         self.mem_d1 = umem()
-        self.mem_break = umem()
         
         # Initialize labels.
         self.master_return_label = label('master_process_%i_return' % self.pid)
@@ -176,7 +178,7 @@ class ProcessTranslate(translator.ProcessTranslate):
             
     def insert_return_do(self):
         self.lines += [
-            ' %s: ' % self.return_do_label,
+            ' %s:' % self.return_do_label,
             ' store d1 %s' %  mem(self.mem_returnpoint),
             #' load d0 %s' % mem(self.mem_timeslots),
             #' put d0',
@@ -241,10 +243,10 @@ class ProcessTranslate(translator.ProcessTranslate):
         
         # Insert label to start of process. 
         extra = self.lines.append
-        extra('%s : nop' % self.start_label)
+        extra('%s:' % self.start_label)
         extra('lda #00')
         extra('get d1')
-        extra('store d1 %s' % mem(self.mem_break))
+        extra('store d1 %s' % mem(self.mem_returnpoint))
 
     def end(self):
         """Called when we are finished parsing."""
@@ -254,10 +256,10 @@ class ProcessTranslate(translator.ProcessTranslate):
         # Make sure we enter at the beginning next time.
         extra('lda #00')
         extra('get d1')
-        extra('store d1 %s' % mem(self.mem_break))
+        extra('store d1 %s' % mem(self.mem_returnpoint))
         extra('jmp %s' % self.enter_label)
         self.insert_enter()
-        extra('%s : nop' % self.end_label)
+        extra('%s:' % self.end_label)
         self.insert_return_do()
         self.insert_wait_do()
 
@@ -345,6 +347,7 @@ class ProcessTranslate(translator.ProcessTranslate):
             'jmp %s' % self.wait_do_label,
             '%s:' % return_label,
             ]
+
     def on_wait(self, wait):
         """Write the machine code for a 'wait' statement. See 'WaitStatement' in
         the statements module to see 'wait's properties."""
@@ -353,20 +356,20 @@ class ProcessTranslate(translator.ProcessTranslate):
             inner = label('inner_wait')
             done = label('wait_done')
             self.lines += [
-                '',
-                "lda %s" % absarg(long_wait),
-                "%s : nop" % inner,
-                'get d0',
-                'store d0 %s' % mem(self.mem_ar),
+                '    ',
+                "    lda %s" % absarg(long_wait),
+                "    %s:" % inner,
+                '    get d0',
+                '    store d0 %s' % mem(self.mem_ar),
                 ]
             self.insert_pass()
             self.lines += [
-                'load d0 %s' % mem(self.mem_ar),
-                'put d0',
-                'sub %s' % absarg(1),
-                'jmpz %s' % done,
-                'jmp %s' % inner,
-                '%s : nop' % done,
+                '    load d0 %s' % mem(self.mem_ar),
+                '    put d0',
+                '    sub %s' % absarg(1),
+                '    jmpz %s' % done,
+                '    jmp %s' % inner,
+                '    %s:' % done,
                 ''
             ]
         else:
