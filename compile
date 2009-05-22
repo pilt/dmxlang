@@ -190,7 +190,7 @@ def parse(lines):
     
     lines.append('') # we want to check that the indentation on the real last 
                      # line is OK
-    for (line, idx) in zip(lines, range(len(lines))):
+    for (idx, line) in enumerate(lines):
         words = strip_comment(line).lower().split()
         
         try:
