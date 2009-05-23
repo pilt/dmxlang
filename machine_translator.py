@@ -83,11 +83,6 @@ class Translate(translator.Translate):
                 self.insert("get d0")
                 self.insert("store d0 %s" % channel(to.channel + off))
         else: # we have a fade
-            # FIXME: Every fade will be 255ms long whatever argument was passed.
-            # fade_time = to.time
-            # FIXME: The final color is likely to differ from the wanted value
-            # because of the rounding.
-
             # See 'IMPLEMENTATION' for a description of the algorithm.
             self.insert('-- start color transition (to %r from %r)' % (to.color, to.from_color))
             
