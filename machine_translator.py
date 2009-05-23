@@ -43,7 +43,7 @@ class Translate(translator.Translate):
         start_line = self.lineno
         start_label = label(start_line, 'do_%i_times' % times)
         self.insert("lda %s" % absarg(times))
-        self.insert("%s : nop" % start_label)
+        self.insert("%s :" % start_label)
         self.insert("get d0")
         self.insert("store d0 %s" % mem_counter(start_line))
         for child in body_statements:
@@ -56,12 +56,12 @@ class Translate(translator.Translate):
         end_label = label(self.lineno + 2, 'end_do')
         self.insert("jmpz %s" % end_label)
         self.insert("jmp %s" % start_label)
-        self.insert("%s : nop" % end_label)
+        self.insert("%s :" % end_label)
 
     def gen_loop_forever(self, body_statements):
         start_line = self.lineno
         start_label = label(start_line, 'do_forever')
-        self.insert("%s : nop" % start_label)
+        self.insert("%s :" % start_label)
         for child in body_statements:
             self.walk(child)
         self.insert("jmp %s" % start_label)
@@ -146,18 +146,18 @@ class Translate(translator.Translate):
         self.insert("get d0")
         counter = mem_counter(self.lineno)
         self.insert("store d0 %s" % counter)
-        self.insert("%s : nop" % start)
+        self.insert("%s :" % start)
 
         # Inner loop.
         inner = label(self.lineno, 'inner_wait')
         self.insert("lda %s" % absarg(200))
-        self.insert("%s : nop" % inner)
+        self.insert("%s :" % inner)
         [self.insert("nop") for _ in range(14)]
         self.insert("sub %s" % absarg(1))
         inner_end = label(self.lineno + 2, 'inner_end')
         self.insert("jmpz %s" % inner_end)
         self.insert("jmp %s" % inner)
-        self.insert("%s : nop" % label(self.lineno, 'inner_end'))
+        self.insert("%s :" % label(self.lineno, 'inner_end'))
 
         # Outer check.
         self.insert("load d0 %s" % counter)
@@ -168,7 +168,7 @@ class Translate(translator.Translate):
         outer_end = label(self.lineno + 2, 'wait_end')
         self.insert("jmpz %s" % outer_end)
         self.insert("jmp %s" % start)
-        self.insert("%s : nop" % outer_end)
+        self.insert("%s :" % outer_end)
 
         self.insert('-- end wait')
 
