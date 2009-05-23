@@ -1,0 +1,5 @@
+wait 200ms
+reset 80
+do forever
+    set 80 color ad
+    move 80 21 30 0

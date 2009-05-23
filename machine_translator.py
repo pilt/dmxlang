@@ -73,50 +73,51 @@ class Translate(translator.Translate):
             self.gen_loop_forever(do.statements)
         else:
             self.gen_loop_times(do.times, do.statements)
+
     def on_reset(self, node):
         self.insert([
          'lda #00',
-         'get d0', ]
+         'get d0', ])
         for i in range(16):
             self.insert('store d0 %s' % channel(node.channel + i))
             self.insert('nop')
         self.insert([
          'lda #ff',
-         'get d0', ]
+         'get d0', ])
         for i in [5, 14, 15]:
             self.insert('store d0 %s' % channel(node.channel + i))
             self.insert('nop')
             
     def on_move(self, node):
-        if ad == 'pan':
+        if node.pan == 'ad':
             self.insert('adread')
         else:
             self.insert([
-                'lda #%s' % absarg(node.position.pan),
+                'lda %s' % absarg(node.pan),
                 'get d0',])
         self.insert('store d0 %s'% channel(node.channel+0))
         
-        if ad == 'tilt':
+        if node.tilt == 'ad':
             self.insert('adread')
         else:
             self.insert([
-                'lda #%s' % absarg(node.position.tilt),
+                'lda %s' % absarg(node.tilt),
                 'get d0',])
         self.insert('store d0 %s'% channel(node.channel+1))
 
-        self.insert(['lda #%s' % absarg(node.speed),
+        self.insert(['lda %s' % absarg(node.speed),
                     'get d0',
                     'store d0 %s'% channel(node.channel+4),])
 
     def on_set(self, node):
-        if self.param == color:
+        if node.param == 'color':
             offset = 6
         else:
             offset = 0
-        if self.ad:
+        if node.ad:
             self.insert('adread')
         else:
-            self.insert('lda #%s' % absarg(node.color))
+            self.insert('lda %s' % absarg(node.value))
             self.insert('get d0')
         self.insert('store d0 %s'% channel(node.channel+offset))
         

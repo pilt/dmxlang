@@ -40,11 +40,11 @@ class ResetStatement(Statement):
 
 class MoveStatement(Statement):
     """ Move moving head """
-    def __init__(self, channel, position, speed, ad = None):
+    def __init__(self, channel, pan, tilt, speed):
         self.channel = channel
-        self.position = position
+        self.pan = pan
+        self.tilt = tilt
         self.speed = speed
-        self.ad = ad
 
 class SetStatement(Statement):
     """ Change value on a moving head"""

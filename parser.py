@@ -90,7 +90,7 @@ def parse(lines):
     def parse_reset(args):
         if len(args) != 1:
             raise ParseError("wrong number of arguments to 'reset'")  
-        return ResetStatement(args[0])
+        return ResetStatement(int(args[0]))
         
     def parse_set(args):
         if len(args) != 3:
@@ -101,12 +101,17 @@ def parse(lines):
         else:
             ad = False
             value = int(args[2])
-        return SetStatement(args[0], args[1], value, ad)
+        return SetStatement(int(args[0]), args[1], value, ad)
     
     def parse_move(args):
-        if len(args) != 3:
+        if len(args) != 4:
             raise ParseError("wrong number of arguments to 'move'")
-        return MoveStatement(args[0], int(args[1]), int(args[2]))
+        pan = args[1]
+        tilt = args[2]
+        if pan != 'ad': pan = int(pan)
+        if tilt != 'ad': tilt = int(tilt)
+        speed = int(args[3])
+        return MoveStatement(int(args[0]), pan, tilt, speed)
 
     def parse_to(args):
         if len(args) > 10:
@@ -213,10 +218,10 @@ def parse(lines):
             except ParseError, e:
                 err = "%s on line %i: %r" % (e, idx+1, line)
                 raise ParseError(err)
-            except Exception, e:
-                raise ParseError("Bad line: %r" % line)
+#            except Exception, e:
+#                raise ParseError("Bad line1: %r" % line)
         else:
-            raise ParseError("Bad line: %r" % line)
+            raise ParseError("Bad line2: %r" % line)
 
     def tree(first, rest):
         if type(first) == DoStatement:
