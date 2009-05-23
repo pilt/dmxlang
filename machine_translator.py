@@ -84,7 +84,6 @@ class Translate(translator.Translate):
                 self.insert("store d0 %s" % channel(to.channel + off))
         else: # we have a fade
             # See 'IMPLEMENTATION' for a description of the algorithm.
-            self.insert('-- start color transition (to %r from %r)' % (to.color, to.from_color))
             
             # Memory address to store current color values at. Red is at
             # 'curcol_mem_start' + 0, green at +1, blue at +2.
@@ -120,7 +119,6 @@ class Translate(translator.Translate):
             wait = translator.WaitStatement(iter_wait)
             body.append(wait)
             self.gen_loop_times(fade_steps, body)
-            self.insert('-- end color transition')
 
     def on_update(self, update):
         if update.update_by == 0:
@@ -140,7 +138,6 @@ class Translate(translator.Translate):
         """Write the machine code for a 'wait' statement. See 'WaitStatement' in
         the statements module to see 'wait's properties."""
         # FIXME: Use 'gen_loop_times'.
-        self.insert('-- start wait')
         start = label(self.lineno, 'wait_%i' % wait.time)
         self.insert("lda %s" % absarg(wait.time))
         self.insert("get d0")
@@ -169,8 +166,6 @@ class Translate(translator.Translate):
         self.insert("jmpz %s" % outer_end)
         self.insert("jmp %s" % start)
         self.insert("%s :" % outer_end)
-
-        self.insert('-- end wait')
 
     def __str__(self):
         return "\n".join(self.lines) + '\n'
