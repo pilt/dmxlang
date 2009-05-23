@@ -249,7 +249,7 @@ def main(args):
     try:
         translator = Translate()
         with open(file, 'r') as f:
-            code_lines = [line[:-1] for line in f.xreadlines()]
+            code_lines = [line.rstrip('\n') for line in f.xreadlines()]
             tree = parse(code_lines)
             translator.traverse(tree)
 
