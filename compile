@@ -91,7 +91,7 @@ def parse(lines):
         return (True, '')
 
     def parse_to(args):
-        if len(args) > 12:
+        if len(args) > 10:
             raise ParseError("too many arguments to 'to'")
         def off(i):
             return args[i]
@@ -107,33 +107,20 @@ def parse(lines):
         if len(args) == o:
             return sm
         
-        if off(o) == 'in':
-            try:
-                temp_time = Time()
-                sm.time = temp_time.from_string(off(o+1)).time
-            except TimeError, e:
-                raise ParseError(e)
-            o += 2
-
-            if len(args) == o:
-                raise ParseError("missing 'from' color")
-
-            if off(o) == 'from':
-                if len(args) < o + 3:
-                    raise ParseError("expecting color (three-tuple)")
-                else:
-                    o += 1
-                    color = [args[o], args[o+1], args[o+2]]
-                    ok, msg = check_color(color)
-                    if ok:
-                        sm.from_color = RGB(*[int(i) for i in color])
-                        o += 3
-                        if len(args) == o:
-                            return sm
-                    else:
-                        raise ParseError(msg)
+        if off(o) == 'from':
+            if len(args) < o + 3:
+                raise ParseError("expecting color (three-tuple)")
             else:
-                raise ParseError("bad keyword %r, expecting 'from'" % off(o))
+                o += 1
+                color = [args[o], args[o+1], args[o+2]]
+                ok, msg = check_color(color)
+                if ok:
+                    sm.from_color = RGB(*[int(i) for i in color])
+                    o += 3
+                    if len(args) == o:
+                        return sm
+                else:
+                    raise ParseError(msg)
 
 
         if off(o) == 'on':
@@ -148,11 +135,11 @@ def parse(lines):
                     ParseError("bad channel value %r" % chan)
             else:
                 raise ParseError("expecting 'channel'")
-
-        if not off(o) in ['and', 'in', 'on']:
-            raise ParseError("unexpected argument %r" % off(o))
-
-        return sm
+        
+        if len(args) == o:
+            return sm
+        else:
+            raise ParseError("unexpected keyword %r" % args[o])
 
     def parse_wait(args):
         if len(args) != 1:

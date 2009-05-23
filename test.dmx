@@ -8,18 +8,18 @@ do forever
     -- put blue on channel 10 lamp
     to 0 0 255 on channel 10
 
-    -- fade to all red in 255ms 
-    to 255 0 0 in 255ms from 0 0 255
+    -- fade to all red (in 255ms)
+    to 255 0 0 from 0 0 255 on channel 10
 
-    to 255 255 255 in 100ms from 255 0 0 
+    to 255 255 255 from 255 0 0 
 
     -- go from red to green to blue to no light five times,
     -- each cycle being two seconds long
     do 5 times
-        to 255 0 0 in 200ms from 0 0 0
-        to 0 255 0 in 200ms from 255 0 0
-        to 0 0 255 in 200ms from 0 255 0
-        to 0 0 0 in 200ms from 0 0 255 
+        to 255 0 0 from 0 0 0
+        to 0 255 0 from 255 0 0
+        to 0 0 255 from 0 255 0
+        to 0 0 0 from 0 0 255 
     
     wait 220ms
 

@@ -77,8 +77,7 @@ class Translate(translator.Translate):
     def on_to(self, to):
         """Write the machine code for a 'to' statement. See 'ToStatement' in the
         statements module to see 'to's properties."""
-        # TODO: Implement other things. See IMPLEMENTATION.
-        if to.time == 0:
+        if to.from_color is None:
             for (c, off) in zip([0, to.color.r, to.color.g, to.color.b, 0], range(5)):
                 self.insert("lda %s" % absarg(c))
                 self.insert("get d0")

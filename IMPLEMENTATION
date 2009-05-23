@@ -13,7 +13,7 @@ Each line in the stack memory area will hold a counter for a 'do' block.
 
 'To' Statements
 ---------------
-    to <r g b> [in <time> from <r g b>] [on channel <channel>]
+    to <r g b> [from <r g b>] [on channel <channel>]
 
 See 'test.dmx' for examples. Color values are integers between zero and 255.
 One line per statement. If no channel is given we will default to channel 1. Red
