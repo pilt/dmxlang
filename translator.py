@@ -12,6 +12,12 @@ class Translate(object):
             self.on_wait(node)
         elif type(node) == UpdateStatement:
             self.on_update(node)
+        elif type(node) == ResetStatement:
+            self.on_reset(node)
+        elif type(node) == MoveStatement:
+            self.on_move(node)
+        elif type(node) == SetStatement:
+            self.on_set(node)
         
     def traverse(self, tree): 
         self.start()

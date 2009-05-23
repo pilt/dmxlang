@@ -90,6 +90,26 @@ def parse(lines):
             return (False, str(e))
         return (True, '')
 
+    def parse_reset(args):
+        if len(args) != 1:
+            raise ParseError("wrong number of arguments to 'reset'")  
+        return ResetStatement(args[0])
+        
+    def parse_set(args):
+        if len(args) != 3:
+            raise ParseError("wrong number of arguments to 'reset'")
+        if args[2] == 'ad':
+            ad = True
+            value = 0
+        else:
+            ad = False
+            value = int(args[2])
+        return SetStatement(args[0], args[1], value, ad)
+    
+    def parse_move(args):
+        if len(args) != 3:
+            raise ParseError("wrong number of arguments to 'move'")
+        return MoveStatement(args[0], int(args[1]), int(args[2]))
     def parse_to(args):
         if len(args) > 12:
             raise ParseError("too many arguments to 'to'")
@@ -153,7 +173,7 @@ def parse(lines):
             raise ParseError("unexpected argument %r" % off(o))
 
         return sm
-
+    
     def parse_wait(args):
         if len(args) != 1:
             raise ParseError("bad number of arguments to 'wait'")

@@ -36,6 +36,27 @@ class ToStatement(Statement):
         return "ToStatement(%r, time=%i, channel=%s, from_color=%r, indent=%i)" \
             % (self.color, self.time, self.channel, self.from_color, self.indent)
 
+class ResetStatement(Statement):
+    """ Reset a moving head"""
+    def __init__(self, channel):
+        self.channel = channel
+
+class MoveStatement(Statement):
+    """ Move moving head """
+    def __init__(self, channel, position, speed, ad = None):
+        self.channel = channel
+        self.position = position
+        self.speed = speed
+        self.ad = ad
+
+class SetStatement(Statement):
+    """ Change value on a moving head"""
+    def __init__(self, channel, param, value=None, ad=None):
+        self.channel = channel
+        self.param = param
+        self.value = value
+        self.ad = ad
+
 
 class UpdateStatement(Statement):
     """Used in fades."""

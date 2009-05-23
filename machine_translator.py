@@ -74,7 +74,53 @@ class Translate(translator.Translate):
             self.gen_loop_forever(do.statements)
         else:
             self.gen_loop_times(do.times, do.statements)
-    
+    def on_reset(self, node):
+        self.insert([
+         'lda #00',
+         'get d0', ]
+        for i in range(16):
+            self.insert('store d0 %s' % channel(node.channel + i))
+            self.insert('nop')
+        self.insert([
+         'lda #ff',
+         'get d0', ]
+        for i in [5, 14, 15]:
+            self.insert('store d0 %s' % channel(node.channel + i))
+            self.insert('nop')
+            
+    def on_move(self, node):
+        if ad == 'pan':
+            self.insert('adread')
+        else:
+            self.insert([
+                'lda #%s' % absarg(node.position.pan),
+                'get d0',])
+        self.insert('store d0 %s'% channel(node.channel+0))
+        
+        if ad == 'tilt':
+            self.insert('adread')
+        else:
+            self.insert([
+                'lda #%s' % absarg(node.position.tilt),
+                'get d0',])
+        self.insert('store d0 %s'% channel(node.channel+1))
+
+        self.insert(['lda #%s' % absarg(node.speed),
+                    'get d0',
+                    'store d0 %s'% channel(node.channel+4),])
+
+    def on_set(self, node):
+        if self.param == color:
+            offset = 6
+        else:
+            offset = 0
+        if self.ad:
+            self.insert('adread')
+        else:
+            self.insert('lda #%s' % absarg(node.color))
+            self.insert('get d0')
+        self.insert('store d0 %s'% channel(node.channel+offset))
+        
     def on_to(self, to):
         """Write the machine code for a 'to' statement. See 'ToStatement' in the
         statements module to see 'to's properties."""
