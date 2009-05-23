@@ -18,7 +18,6 @@ Each line in the stack memory area will hold a counter for a 'do' block.
 See 'test.dmx' for examples. Color values are integers between zero and 255.
 One line per statement. If no channel is given we will default to channel 1. Red
 value will be put at channel + 1, green at channel + 2 and blue at channel + 3.
-The fade time must be between 1ms and 255ms long.
 
 'Wait' Statements
 -----------------
