@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import translator
@@ -44,7 +43,7 @@ class Translate(translator.Translate):
         start_line = self.lineno
         start_label = label(start_line, 'do_%i_times' % times)
         self.insert("lda %s" % absarg(times))
-        self.insert("%s : nop" % start_label)
+        self.insert("%s :" % start_label)
         self.insert("get d0")
         self.insert("store d0 %s" % mem_counter(start_line))
         for child in body_statements:
@@ -57,12 +56,12 @@ class Translate(translator.Translate):
         end_label = label(self.lineno + 2, 'end_do')
         self.insert("jmpz %s" % end_label)
         self.insert("jmp %s" % start_label)
-        self.insert("%s : nop" % end_label)
+        self.insert("%s :" % end_label)
 
     def gen_loop_forever(self, body_statements):
         start_line = self.lineno
         start_label = label(start_line, 'do_forever')
-        self.insert("%s : nop" % start_label)
+        self.insert("%s :" % start_label)
         for child in body_statements:
             self.walk(child)
         self.insert("jmp %s" % start_label)
@@ -124,20 +123,13 @@ class Translate(translator.Translate):
     def on_to(self, to):
         """Write the machine code for a 'to' statement. See 'ToStatement' in the
         statements module to see 'to's properties."""
-        # TODO: Implement other things. See IMPLEMENTATION.
-        if to.time == 0:
+        if to.from_color is None:
             for (c, off) in zip([0, to.color.r, to.color.g, to.color.b, 0], range(5)):
                 self.insert("lda %s" % absarg(c))
                 self.insert("get d0")
                 self.insert("store d0 %s" % channel(to.channel + off))
         else: # we have a fade
-            # FIXME: Every fade will be 255ms long whatever argument was passed.
-            # fade_time = to.time
-            # FIXME: The final color is likely to differ from the wanted value
-            # because of the rounding.
-
             # See 'IMPLEMENTATION' for a description of the algorithm.
-            self.insert('-- start color transition (to %r from %r)' % (to.color, to.from_color))
             
             # Memory address to store current color values at. Red is at
             # 'curcol_mem_start' + 0, green at +1, blue at +2.
@@ -173,7 +165,6 @@ class Translate(translator.Translate):
             wait = translator.WaitStatement(iter_wait)
             body.append(wait)
             self.gen_loop_times(fade_steps, body)
-            self.insert('-- end color transition')
 
     def on_update(self, update):
         if update.update_by == 0:
@@ -193,24 +184,23 @@ class Translate(translator.Translate):
         """Write the machine code for a 'wait' statement. See 'WaitStatement' in
         the statements module to see 'wait's properties."""
         # FIXME: Use 'gen_loop_times'.
-        self.insert('-- start wait')
         start = label(self.lineno, 'wait_%i' % wait.time)
         self.insert("lda %s" % absarg(wait.time))
         self.insert("get d0")
         counter = mem_counter(self.lineno)
         self.insert("store d0 %s" % counter)
-        self.insert("%s : nop" % start)
+        self.insert("%s :" % start)
 
         # Inner loop.
         inner = label(self.lineno, 'inner_wait')
         self.insert("lda %s" % absarg(200))
-        self.insert("%s : nop" % inner)
+        self.insert("%s :" % inner)
         [self.insert("nop") for _ in range(14)]
         self.insert("sub %s" % absarg(1))
         inner_end = label(self.lineno + 2, 'inner_end')
         self.insert("jmpz %s" % inner_end)
         self.insert("jmp %s" % inner)
-        self.insert("%s : nop" % label(self.lineno, 'inner_end'))
+        self.insert("%s :" % label(self.lineno, 'inner_end'))
 
         # Outer check.
         self.insert("load d0 %s" % counter)
@@ -221,9 +211,7 @@ class Translate(translator.Translate):
         outer_end = label(self.lineno + 2, 'wait_end')
         self.insert("jmpz %s" % outer_end)
         self.insert("jmp %s" % start)
-        self.insert("%s : nop" % outer_end)
-
-        self.insert('-- end wait')
+        self.insert("%s :" % outer_end)
 
     def __str__(self):
         return "\n".join(self.lines) + '\n'

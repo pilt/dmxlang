@@ -24,17 +24,14 @@ class DoStatement(Statement):
 
 
 class ToStatement(Statement):
-    def __init__(self, color, time=None, channel=1, from_color=None):
-        if time is None:
-            time = 0
+    def __init__(self, color, channel=1, from_color=None):
         self.color = color
-        self.time = time
         self.channel = channel
         self.from_color = from_color
 
     def __repr__(self):
-        return "ToStatement(%r, time=%i, channel=%s, from_color=%r, indent=%i)" \
-            % (self.color, self.time, self.channel, self.from_color, self.indent)
+        return "ToStatement(%r, channel=%s, from_color=%r, indent=%i)" \
+            % (self.color, self.channel, self.from_color, self.indent)
 
 class ResetStatement(Statement):
     """ Reset a moving head"""
