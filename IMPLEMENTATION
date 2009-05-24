@@ -25,6 +25,25 @@ value will be put at channel + 1, green at channel + 2 and blue at channel + 3.
 
 The wait time must be between 1ms and 255ms long. 
 
+'Set' Statements
+----------------
+    set <channel> <color | shutter | gobo | focus | direct>  <value>
+
+Change a value on moving head. A special 'value' is 'ad', which will read the
+value from the A/D converter.
+
+'Reset' Statements
+----------------
+    reset <channel>
+
+Reset moving head.
+
+'Move' Statements
+-----------------
+    move <channel> <pan> <tilt> <speed>
+
+Move moving head.
+
 
 Comments
 --------
