@@ -1,0 +1,13 @@
+wait 200ms
+to 0 0 0 on channel 1
+to 0 0 0 on channel 6
+to 0 0 0 on channel 11
+to 0 0 0 on channel 16
+reset 80
+move 80 70 0 0
+set 80 shutter closed
+set 80 focus
+wait 10s
+fade to 0 30 255 on channel 1
+
+

@@ -2,6 +2,38 @@
 
 import translator
 
+modes =  {'direct': {'offset': 0, 'values': {}}, 
+          'color':
+              {'offset': 6, 
+               'values': 
+               {'white': 0,
+                'turquoise': 10,
+                'red': 21, 
+                'cyan': 32, 
+                'green': 42, 
+                'magenta': 53, 
+                'lightblue': 64, 
+                'yellow': 74,
+                'green': 85, 
+                'pink': 96, 
+                'blue': 106, 
+                'orange': 117
+                }},
+          'gobo': 
+          {'offset': 10,
+           'values': 
+           {'open': 0,
+            'gobo1': 32,
+            'gobo2': 64,
+            'gobo3': 96,
+            'gobo4': 128,
+            'gobo5': 160,
+            'gobo6': 192,
+            }}, 
+          'focus': {'offset': 13, 'values': {}}, 
+          'shutter': {'offset': 15,
+                      'values': {'open': 255, 
+                                 'closed': 0}}}
 def absarg(decimal):
     val = hex(abs(decimal))[2:]
     return "#" + val.rjust(2, '0')
@@ -74,6 +106,13 @@ class Translate(translator.Translate):
         else:
             self.gen_loop_times(do.times, do.statements)
 
+    def insert_load_value(self, value):
+        if value == 'ad':
+            self.insert('adread')
+        else:
+            self.insert('lda %s' % absarg(int(value)))
+            self.insert('get d0')
+        
     def on_reset(self, node):
         self.insert([
          'lda #00',
@@ -89,36 +128,19 @@ class Translate(translator.Translate):
             self.insert('nop')
             
     def on_move(self, node):
-        if node.pan == 'ad':
-            self.insert('adread')
-        else:
-            self.insert([
-                'lda %s' % absarg(node.pan),
-                'get d0',])
+        self.insert_load_value(node.pan)
         self.insert('store d0 %s'% channel(node.channel+0))
-        
-        if node.tilt == 'ad':
-            self.insert('adread')
-        else:
-            self.insert([
-                'lda %s' % absarg(node.tilt),
-                'get d0',])
+        self.insert_load_value(node.tilt)
         self.insert('store d0 %s'% channel(node.channel+1))
-
         self.insert(['lda %s' % absarg(node.speed),
                     'get d0',
                     'store d0 %s'% channel(node.channel+4),])
 
     def on_set(self, node):
-        if node.param == 'color':
-            offset = 6
-        else:
-            offset = 0
-        if node.ad:
-            self.insert('adread')
-        else:
-            self.insert('lda %s' % absarg(node.value))
-            self.insert('get d0')
+        mode = modes[node.param]
+        offset = mode['offset']
+        value = mode['values'].get(node.value, node.value)
+        self.insert_load_value(value)
         self.insert('store d0 %s'% channel(node.channel+offset))
         
     def on_to(self, to):
