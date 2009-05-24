@@ -1,55 +1,63 @@
-Implementation Notes
-====================
-'Do' Blocks
------------
-    do <<times> times | forever>
-        ...
+README
+======
 
-A block can run zero to 255 times or forever. 
+The Language
+------------
 
-We need a stack because 'do' blocks can be nested. One memory line should be
-reserved for stack offset and some memory area reserved for storing the stack.
-Each line in the stack memory area will hold a counter for a 'do' block.
+    'Do' Blocks
+    -----------
+        do <<times> times | forever>
+            ...
 
-'To' Statements
----------------
-    to <r g b> [from <r g b>] [on channel <channel>]
+    A block can run zero to 255 times or forever.
 
-See 'test.dmx' for examples. Color values are integers between zero and 255.
-One line per statement. If no channel is given we will default to channel 1. Red
-value will be put at channel + 1, green at channel + 2 and blue at channel + 3.
+    We need a stack because 'do' blocks can be nested. One memory line should
+    be reserved for stack offset and some memory area reserved for storing the
+    stack. Each line in the stack memory area will hold a counter for a 'do'
+    block.
 
-'Wait' Statements
------------------
-    wait <time>
+    'To' Statements
+    ---------------
+        to <r g b> [from <r g b>] [on channel <channel>]
 
-The wait time must be between 1ms and 255ms long. 
+    See 'test.dmx' for examples. Color values are integers between zero and 255.
+    One line per statement. If no channel is given we will default to channel
+    1. Red value will be put at channel + 1, green at channel + 2 and blue at
+    channel + 3. If 'from <r g b>' is supplied, the color will fade from the
+    'from color' to 'to color' in 255 ms.
 
-'Set' Statements
-----------------
-    set <channel> <color | shutter | gobo | focus | direct>  <value>
+    'Wait' Statements
+    -----------------
+        wait <time>
 
-Change a value on moving head. A special 'value' is 'ad', which will read the
-value from the A/D converter.
+    The wait time must be between 1ms and 255ms long. 
 
-'Reset' Statements
-----------------
-    reset <channel>
+    'Set' Statements
+    ----------------
+        set <channel> <color | shutter | gobo | focus | direct>  <value>
 
-Reset moving head.
+    Change a value on moving head. A special 'value' is 'ad', which will read
+    the value from the A/D converter.
 
-'Move' Statements
------------------
-    move <channel> <pan> <tilt> <speed>
+    'Reset' Statements
+    ----------------
+        reset <channel>
 
-Move moving head.
+    Reset moving head.
+
+    'Move' Statements
+    -----------------
+        move <channel> <pan> <tilt> <speed>
+
+    Move moving head.
 
 
-Comments
---------
-    -- <text>
+    Comments
+    --------
+        -- <text>
 
-Start a comment anywhere at a line with '--'. They and end at EOL.
+    Start a comment anywhere at a line with '--'. They and end at EOL.
+
 
 Fades
 -----
