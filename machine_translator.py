@@ -152,7 +152,7 @@ class Translate(translator.Translate):
                 self.insert("get d0")
                 self.insert("store d0 %s" % channel(to.channel + off))
         else: # we have a fade
-            # See 'IMPLEMENTATION' for a description of the algorithm.
+            # See 'README' for a description of the algorithm.
             
             # Memory address to store current color values at. Red is at
             # 'curcol_mem_start' + 0, green at +1, blue at +2.
