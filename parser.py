@@ -94,8 +94,8 @@ def parse(lines):
         
     def parse_set(args):
         if len(args) != 3:
-            raise ParseError("wrong number of arguments to 'reset'")
-        assert args[1] in ['color, shutter', 'gobo', 'focus', 'direct']
+            raise ParseError("wrong number of arguments to 'set'")
+        assert args[1] in ['color', 'shutter', 'gobo', 'focus', 'direct']
         return SetStatement(int(args[0]), args[1], args[2])
     
     def parse_move(args):
